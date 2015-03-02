@@ -1,0 +1,1269 @@
+/**
+ * Functions for use on the home page of the Medent Mobile web site, required for system startup.
+ * 
+ * This library includes the following public API:
+ * 
+ *    Defined constants:
+ *    
+ *       -> sMobileSectionField is the name of the <input type="hidden"> field on screen
+ *          for storing the value of the current mobile_section being displayed.
+ *
+ *       -> sPageContainerField is the name of the <section> on screen which is clearted and filled
+ *          for the display of each MM web page.
+ *
+ *       -> sTitleBar is the field in which to display the title bar for a given page.
+ *  
+ *    Included functions:
+ *
+ *       -> IsIos returns true if the user is running MM on an iOS device.
+ *       
+ *       -> InitializeLists initializes the various lookup lists maintained in the MySQL database.
+ *
+ *       -> IsDesktop returns true if the user is running MM from a desktop browser; 
+ *          e.g. Firefox or IE 10.
+ *       
+ *       -> IsIos returns true if the user is running MM in any browser in iOS.
+ *       
+ *       -> IsIpad returns true if the user is running MM in any browser on an iPad.
+ *
+ *       -> IsMobile returns true if the user is running MM from a mobile device; 
+ *          e.g. a smartphone or an iPad.
+ *
+ *       -> IsTablet returns true if the mobile device on which the user is running MM is a 
+ *          tablet computer; e.g. an iPad or a Samsung Galaxy Tab.
+ *
+ *       -> IsTouch returns true if the mobile device on which the user is running MM is capable
+ *          of responding to touch input.
+ *
+ *       -> LoadWhenDomIsReady is the initial function called when the user loads MM. It sets up 
+ *          the rest of the MM environment.
+ *
+ *       -> Logout logs the user out of MM, and clears out any session data.
+ *
+ *       -> ModifyEmulatorStatus sets the appropriate styles for the current browser to emulate
+ *          a different style of browser, as specified on the User Preferences form; 
+ *          e.g. to emulate a smartphone on a desktop browser.
+ *
+ *       -> ModifyFontSize sets the preferred font size for MM in the user's current browser, 
+ *          as specified on the User Preferences form.
+ *
+ *       -> ModifyMenuColumns sets the number of menu columns preferred by the user, as specified 
+ *          on the User Preferences form.
+ *
+ *       -> SetDeviceEnvironment loads necessary values from localStorage for setting up a particular
+ *          user on a particular device. 
+ *
+ *       -> SetDeviceStyleSheet loads the correct style sheet for the current class of device; i.e. desktop, 
+ *          mobile, or tablet computer.
+ *
+ *       -> SetTriageAddresses sets a flag to tell webmain when the user wishes to receive triage listings 
+ *          with addresses showing. This is intended for use by CCS hardware techs.
+ *
+ *       -> SetViewport sets the <meta name="viewport"> tag correctly for the current class of device; 
+ *          i.e. desktop, mobile, or tablet.
+ *       
+ *       -> UseFixedHeaders returns true if the system is using a fixed header for the menu bar.
+ *       
+ *       -> UseNativeScrolling returns true if MM should use a browser's native scrolling capabilities; or
+ *          false if it should use the custom scrolling functions of MM (currently only iPad does this).
+ *        
+ * @author JJF (4/18/2012)
+ */
+
+CCS.Startup = {};
+
+(function namespace_Startup() {
+   "use strict";
+
+   // define field names
+   var jqsDisplayPracticeIdField = "#sDisplayPracticeId";
+   var jqsInitializedField       = "#bIsSystemInitialized";
+   var jqsIsMobileField          = "#bIsMobile";
+   var jqsLoggedField            = "#bIsLoggedIn";
+   var jqsLoginIdField           = "#sLoginId";
+   var jqsMedentSessionIdField   = "#sMedentSessionId";
+   var jqsMobileIdField          = "#sMobileId";
+   var sMobileSectionField       = "sMobileSection";
+   var jqsMobileUserIdField      = "#sMobileUserId";
+   var jqsMobileUserNameField    = "#sMobileUserName";
+   var jqsPageContainerField     = "#page-container";
+   var jqsPracticeIdField        = "#sPracticeId";
+//   var jqsReadyField             = "#bIsSystemReady";
+   var jqsSessionIdField         = "#sSessionId";
+   var jqsTitleBar               = ".titleBar > header";
+   var jqsUserNameField          = "#sUserName";
+   var jqsTimeoutField           = "#iTimeout";
+
+   // Additional variables for this file
+   var bIsIos                  = undefined;
+   var _bIsIpad                = undefined;
+   var _bIsMobile              = undefined;
+   var _bIsTablet              = undefined;
+   var _bIsDesktop             = undefined;
+   var _bIsWindowsPhone        = undefined;
+   var bIsTouch                = undefined;
+   var bUseFixedHeaders        = undefined;
+   
+   var sInitializeListsScript  = CCS.Globals.CCS_WEBSITE + "/ajax/ccs_ajax_initialization.php";
+
+   var _bSupportsWorkerThreads = undefined;
+
+   /**
+    * GetInitialQuery determines the query string used when starting Medent Mobile
+    * 
+    * @param {none}
+    * @returns {string} the initial query string
+    * 
+    * @author JJF (7/31/2012)
+    */
+   function GetInitialQuery()
+   {
+      var sQuery = location.search.substring(1);
+      sQuery = sQuery.replace(/iNow=\d*/, "");
+      if (sQuery.length === 0 || sQuery === "mobile_section=mobile_menu") {
+         sQuery = CCS.History.RestoreEnvironment();
+      } // if
+      
+      return sQuery;
+   } // GetInitialQuery
+
+   /**
+    * Determines if the user is running MM on IE on Windows Phone 8+.
+    * 
+    * @param none
+    * @returns {boolean or integer} false if not running IE on WP8, or major version number if running WP8
+    * @author JJF (6/5/2013)
+    */
+   function IsWindowsPhone()
+   {
+      if (_bIsWindowsPhone === undefined) {
+         var asUa = navigator.userAgent.match(/IEMobile\/(\d+)\.(\d+)/);
+         _bIsWindowsPhone = (asUa !== null && asUa.length >= 3) ? parseInt(asUa[1], 10) : false;
+//         CCS.Debug.Alert("User Agent = " + navigator.userAgent + ((asUa !== null) ? ";  IE version: " + asUa[1] + "." + asUa[2] : ""));
+      } // if
+      return _bIsWindowsPhone;
+      
+   } // IsWindowsPhone
+   
+   /*
+    * IsIos determines if the user is running MM on a browser running iOS.
+    * 
+    * @param none
+    * @returns {boolean or integer} false if not running iOS, or major version number if running iOS
+    * @author JJF (11/30/2012)
+    */
+   function IsIos()
+   {
+      if (bIsIos === undefined) {
+         var sPlatform = navigator.platform;
+         bIsIos = (navigator.hasOwnProperty("standalone") && (sPlatform === "iPad" || sPlatform === "iPhone" || sPlatform === "iPod"));
+
+         if (bIsIos) {
+            var rxPattern = /OS (\d)_(\d+)(_(\d+))?/;  // [1] -> major, [2] -> minor, [4] -> micro version
+            var asIosVersion = window.navigator.userAgent.match(rxPattern);
+            bIsIos = (asIosVersion.length > 1) ? asIosVersion[1] : 0;
+//            CCS.Debug.Alert("iOS version: " + asIosVersion[1] + "." + asIosVersion[2] + ((asIosVersion.length >3) ? "." + asIosVersion[4] : ""));
+         } // if
+      } // if
+      return bIsIos;
+   } // IsIos
+
+   /**
+    * IsIpad returns true if the user is running MM on any browser on an iPad,
+    * or if the user is running MM with the "tablet" emulation option checked.
+    * 
+    * @param {none}
+    * @returns {bool} true if the user is running MM on an iPad or is emulating a tablet; false otherwise
+    * 
+    * @author JJF (8/10/2012)
+    */
+   function IsIpad(/* optional */ bIsIpad)
+   {
+      if (bIsIpad !== undefined) {
+         _bIsIpad = !!bIsIpad;
+      } else if (_bIsIpad === undefined) {
+         var sPlatform = navigator.platform;
+         var sEmulator = CCS.Storage.Get("emulator") || "none"; // default
+         _bIsIpad = ((navigator.hasOwnProperty("standalone") && sPlatform === "iPad") || (sEmulator === "tablet"));
+      } // if
+      return _bIsIpad;
+   } // IsIpad
+
+
+   /**
+    * IsMobile tries to determine if the user is running MM on a mobile device. In the majority of cases,
+    * this is defined as true if the window object has the property "orientation", meaning that it can rotate.
+    * Older phones, however, such as the Blackberry Curve, may be mobile and yet not have the ability to rotate.
+    * In addition, Internet Explorer 10 does not seem to define this property, even on tablet computers.
+    * This method seeks to account for those exceptions.
+    * 
+    * @param bNoConsole {bool} if true, do not allow calls to CCS.Debug.Console (to prevent circular logic)
+    * @returns {boolean} true if the user is running on a mobile device; false otherwise.
+    * 
+    * @author JJF (1/5/2012)
+    */
+   function IsMobile(/* optional */ bIsMobile, /*optional*/ bNoConsole)
+   {
+      if (bIsMobile !== undefined) {
+         _bIsMobile = !!bIsMobile;
+      } else if (_bIsMobile === undefined) {
+         bNoConsole = !!bNoConsole; 
+         var sEmulator = CCS.Storage.Get("emulator") || "none"; // default
+   
+         _bIsMobile = (window.hasOwnProperty("orientation") || (sEmulator === "mobile"));
+         if (!_bIsMobile) {
+            var sUserAgent    = navigator.userAgent.toLowerCase();
+            var sPlatform     = navigator.platform.toLowerCase();
+      
+            var bIsBlackberry = (sUserAgent.indexOf("blackberry") > -1);
+            var bHasTabletId  = (sUserAgent.indexOf("tablet") > -1); // works with IE 10 apparently (?) and Firefox 13+
+            var bHasMobileId  = (sUserAgent.indexOf("mobile") > -1); // works with Firefox 13+, Windows Phone 8
+            var bIsAndroid    = ((sPlatform === "linux armv7l") || (sPlatform === "android") ||(sUserAgent.indexOf("android") > -1));
+            var bIsFirefoxMobile = (sUserAgent.indexOf("fennec") > -1); // works with Firefox through version 12
+            var bIsWindowsTablet = bHasTabletId && (navigator.msPointerEnabled);
+            
+            _bIsMobile = !bIsWindowsTablet && (bIsAndroid || bIsBlackberry || bHasTabletId || bHasMobileId || bIsFirefoxMobile);
+         } // if   
+   
+         if (!bNoConsole) {
+//            CCS.Debug.Console("typeof orientation = <" + (typeof orientation) + ">, ondeviceorientation in window = <" + ("ondeviceorientation" in window) + ">. Is this a mobile device? " + _bIsMobile);
+//            CCS.Debug.Console("Is this a mobile device? " + _bIsMobile);
+            bNoConsole = false; // to keep JS-Lint happy
+         } // if
+      } // if
+      return _bIsMobile;
+   } // IsMobile
+   
+
+   /**
+    * IsTablet tries to determine if the user is running MM on a tablet computer, 
+    * defined as either an iOS iPad or another mobile device with the narrower screen dimension,
+    * after the viewport is set, of at least 500 pixels that can change window orientation.
+    * 
+    * @param {none}
+    * @returns {boolean} true if the user appears to be running on a tablet; false otherwise
+    * 
+    * @author JJF (11/21/2011)
+    * @modified JJF (3/15/2012)
+    */
+   function IsTablet(/* optional */ bIsTablet) 
+   {
+      if (bIsTablet !== undefined) {
+         _bIsTablet = !!bIsTablet;
+      } else if (_bIsTablet === undefined) {
+         var sEmulator = CCS.Storage.Get("emulator") || "none"; // default
+         _bIsTablet = (sEmulator === "tablet");
+         
+         if (!_bIsTablet && IsMobile() && ((sEmulator !== "mobile"))) {
+            var sPlatform        = navigator.platform.toLowerCase();
+            var sUserAgent       = navigator.userAgent.toLowerCase();
+//            var sAppName         = navigator.appName.toLowerCase();
+            
+            var _bIsIpad          = (sPlatform === "ipad");
+            var bHasTabletId     = (sUserAgent.indexOf("tablet") > -1); // works with IE 10 apparently (?) and Firefox 13+
+            var bIsWindowsTablet = /* bHasTabletId &&*/ (navigator.msPointerEnabled); // treat Windows 10 tablets as desktop devices
+            
+            var iScreenWidth     = Math.min(document.documentElement.clientWidth, document.documentElement.clientHeight);
+            var bIsTabletSized   = (iScreenWidth >= 500); // hopefully this will correctly catch all tablets
+      
+            _bIsTablet = !bIsWindowsTablet && (_bIsIpad || bIsTabletSized || bHasTabletId); 
+            
+         } // if
+         
+//         CCS.Debug.Console("Is this a tablet device? " + _bIsTablet);
+      } // if
+      return _bIsTablet;
+   } // IsTablet
+   
+   /**
+    * IsDesktop tries to determine if the user is running MM in a desktop browser. 
+    * In addition, Internet Explorer 10 on tablet computers is treated as a desktop computer.
+    * 
+    * @param bNoConsole {bool} if true, do not allow calls to CCS.Debug.Console (to prevent circular logic)
+    * @returns {boolean} true if the user is running on a mobile device; false otherwise.
+    * 
+    * @author JJF (1/5/2012)
+    */
+   function IsDesktop(/* optional */ bIsDesktop, /*optional*/ bNoConsole)
+   {
+      if (bIsDesktop === true) {
+         _bIsMobile  = undefined;
+         _bIsTablet  = undefined;
+         _bIsDesktop = undefined;
+         IsTablet();  // resets _bIsMobile, _bIsTablet
+         IsDesktop(); // resets _bIsDesktop
+         
+      } else if (bIsDesktop !== undefined) {
+         _bIsDesktop = bIsDesktop;
+      } else if (_bIsDesktop === undefined) {
+         bNoConsole = !!bNoConsole; 
+         var sEmulator = CCS.Storage.Get("emulator") || "none"; // default
+   
+         _bIsDesktop = ((sEmulator === "desktop") || !(IsMobile() || IsTablet()));
+         if (!bNoConsole) {
+//            CCS.Debug.Console("Is this a desktop browser device? " + _bIsDesktop);
+            bNoConsole = false; // to keep JS-Lint happy
+         } // if
+      } // if
+      return _bIsDesktop;
+   } // IsDesktop
+   
+      
+   /**
+    * IsTouch tries to determine if the user is running MM on a device with a touch interface. 
+    * Note that this property is distinct from IsMobile, since some devices, such as the Blackberry Curve, 
+    * are mobile and yet are not touch enabled. Also, some desktop/notebook computers now offer touch interfaces.
+    * 
+    * @param {none}
+    * @returns {boolean} true if the user is running on a device with a touch interface; false otherwise.
+    * 
+    * @author JJF (1/5/2012)
+    * 
+    * @notes:
+    *    1. c.f. http://ie.microsoft.com/testdrive/Includes/Script/FeatureDetection.js
+    */
+   function IsTouch()
+   {
+      if (bIsTouch === undefined) {
+         var sEmulator = CCS.Storage.Get("emulator") || "none"; // default
+         bIsTouch = (document.createElement("div").hasOwnProperty("ontouchstart") || 
+                     window.hasOwnProperty("TouchEvent") || 
+                     navigator.msMaxTouchPoints || // IE 10
+                     (sEmulator === "tablet") || 
+                     (sEmulator === "mobile"));
+//         CCS.Debug.Console("Is this device touch-enabled? " + bIsTouch);
+      } // if
+      return bIsTouch;
+   } // IsTouch
+
+   // Modify page variables as needed for mobiletesting
+   /**
+    * SetUpTestingEnvironment modifies various settings for the Medent mobile testing environment
+    * 
+    * @param {none}
+    * @returns {none}
+    * 
+    * @author JJF (7/31/2012)
+    */
+   function SetUpTestingEnvironment()
+   {
+//      CCS.Debug.Console("Modifying stuff for testing environment ...");
+      var sHostname = "www.medentmobile.com";
+      var sThisHost = location.hostname; 
+      if (sThisHost !== sHostname || CCS.Globals.MM_PATH !== "") {
+         
+         // 1. Change URLs for testing site, if appropriate
+         if (!($("#page-container").has("#loading"))) {
+            $("a[href*='" + sHostname + "']").each(function() {
+               var sOldHref = $(this).attr("href");
+               var sNewHref = sOldHref.replace(sHostname, sThisHost);
+               $(this).attr("href", sNewHref);
+            }); // each
+         } // if
+         
+         // 2. Change title for testing site
+         var sTitle = document.title;
+         var eMeta  = document.getElementsByName("apple-mobile-web-app-title")[0];
+         
+         if (CCS.Globals.MM_PATH.indexOf("Beta") > -1) {
+            document.title = ((sThisHost === sHostname) ? "Live-" : "Test-") + CCS.Globals.MM_PATH;
+            eMeta.content  = ((sThisHost === sHostname) ? "MM Live-" : "MM Test-") + CCS.Globals.MM_PATH ;
+         } else if (CCS.Globals.MM_PATH !== "") {
+            document.title = (sThisHost === sHostname) ? "urLive" : "urTest";
+            eMeta.content  = (sThisHost === sHostname) ? "MM urLive" : "MM urTest";
+         } else if (sTitle.toLowerCase() === "medent mobile") {
+            document.title = "Testing Medent Mobile";
+            eMeta.content  = "Testing MM";
+         } // if
+         
+      } // if
+      return;
+   } // SetUpTestingEnvironment
+
+  
+   // private, for use by InitializeLists() only!!!
+   var _iLastInitialized = 0;
+   var _iInitialized     = 0;
+
+   // private, for use by InitializeLists() only!!!
+   function _InitializeLists() 
+   {
+//      CCS.Debug.Console("Entering _InitializeLists ...");
+      
+      $.post(sInitializeListsScript).
+      
+      done(function(sResponse) {
+         var xResponse  = $.parseXML(sResponse.trim());
+         var iErrorCode = CCS.Utilities.GetErrorCodeFromXml(xResponse);
+         
+         if (!iErrorCode) {
+            _iLastInitialized = Date.now();
+            
+         } else {
+            // assume the failure occurred because the user isn't logged in
+            _iLastInitialized = 0;
+         } // if
+      }). // done
+      
+      fail(function() {
+         // assume the failure occurred because the user isn't logged in
+      }); // fail
+         
+      return;
+   } // _InitializeLists
+
+   
+
+   /**
+    * Initializes the lookup lists for use in Medent Mobile. It runs each time
+    * the system (re-)starts and every five minutes thereafter, as long as the user remains
+    * logged in. In this way, the lists are kept fresh, without slowing the user down when 
+    * working on Ajax based forms.
+    * 
+    * In addition, this function starts the Refresh Alerts worker thread. That thread will poll the
+    * MEDENT server once each minute to determine if the user has any new triages, emails, etc.
+    * When it does, it sends a message to 
+    *
+    * @notes
+    *    1. When possible, lists are initialized in worker threads rather than in the main 
+    *       JavaScript thread. For browsers that don't support worker threads, this function falls
+    *       back to a more traditional function with an Interval loop.
+    *    2. Refresh Alerts functionality is not mimicked for browsers that don't support worker 
+    *       threads, since that behavior is not mission critical.
+    *       
+    *  @param {none}
+    *  @returns {none}
+    *  @author JJF (11/4/2011)
+    */
+   function InitializeLists(/* optional */ bForceInitialization) 
+   {
+      var bIsLoggedOut = (
+            $("#sMobileId").length === 0       || 
+            $("#sMobileId").val().length === 0 ||
+            $("#sMobileSection").val() === "-1" ||
+            $("#sMobileSection").val() === "validate");
+   
+      if (_bSupportsWorkerThreads === undefined) {
+         try {
+            _bSupportsWorkerThreads = CCS.Workers.SupportsWorkers();
+         } catch (e) {
+            _bSupportsWorkerThreads = false;
+         }
+      } // if
+
+      if (_bSupportsWorkerThreads) {
+
+         if (!bIsLoggedOut) {
+            CCS.Workers.InitializeLists.Start();
+            CCS.Workers.RefreshAlerts.Start();
+         } else {
+            CCS.Workers.InitializeLists.Stop();
+            CCS.Workers.RefreshAlerts.Stop();
+         } // if
+         
+      } else {
+         
+         var bIsInitialized = !bForceInitialization && (_iLastInitialized > 0); // && CCS.Utilities.to_bool($(jqsReadyField).val());
+
+         if (!bIsInitialized && !bIsLoggedOut) {
+            
+            clearInterval(_iInitialized);
+            _iInitialized = setInterval(function() {
+               _InitializeLists();
+            }, (5 * 60 * 1000)); // re-initialize at most every 5 minutes
+            
+         } else if (bIsLoggedOut) {
+            
+            clearInterval(_iInitialized);
+            _iLastInitialized = 0;
+            
+         } // if
+      } // if
+      
+      return;
+   } // InitializeLists
+   
+
+   /**
+    * Upon successful system initialization, InitializeSystemSuccess sets up the $_SESSION array,
+    * populates fields on the web page appropriately, initializes the lookup lists, and loads the 
+    * appropriate page for the user.
+    * 
+    * @param xResponse {XML} text returned by Ajax call with system initialization info
+    * @returns {none}
+    * @author JJF (11/4/2011)
+    */
+   function InitializeSystemSuccess(xResponse) 
+   {
+//      CCS.Debug.Console("System initialization succeeded!");
+      try {
+         var iStart = xResponse.indexOf("<?xml");
+         var iEnd   = xResponse.indexOf("</response>") + ("</response>").length;
+         xResponse  = xResponse.substring(iStart, iEnd);
+         xResponse = $.parseXML(xResponse.trim());
+      } catch (e) {
+//         xResponse = $.parseXML("<xml></xml>");
+      } // try/catch
+      
+      // Set device's environment; moved here from LoadWhenDomIsReady() to correct persistence of user preferences
+//    CCS.Debug.Console("Setting device environment ...");
+      SetDeviceEnvironment();
+ 
+
+      var iErrorCode = CCS.Utilities.GetErrorCodeFromXml(xResponse);
+      var bIsSystemInitialized = (iErrorCode === 0);
+      if (bIsSystemInitialized) {
+//         CCS.Debug.Console("Setting system variables ...");
+         $(jqsInitializedField).val("1");
+         var sIsMobile        = $(xResponse).find("bIsMobile").text();
+         var sSessionId       = $(xResponse).find("sSessionId").text();
+         var sQueryUri        = decodeURIComponent($(xResponse).find("sQueryUri").text());
+         
+         CCS.Storage.Save("sSavedSessionId", sSessionId);
+         CCS.Storage.Save("sLastRequestTime", Date.now());
+   
+//         CCS.Debug.Console("Setting " + jqsIsMobileField + " to " + sIsMobile);
+         $(jqsIsMobileField).val(sIsMobile);
+         
+         // initialize lists, load table initialization stuff
+//         CCS.Debug.Console("Initializing lists ...");
+         InitializeLists(true);
+         
+         // Remove loading message and loading scripts, if they are still present
+         var sRemove = "#loading, #loadScripts, #error";
+         $(sRemove).remove(); 
+         $("#simulate-mobile-page").css("display","");
+         
+         var bHasFullUrl = (sQueryUri.indexOf(CCS.Globals.CCS_INDEX) > -1 || sQueryUri.indexOf(CCS.Globals.sCallCgiScript) > -1);
+         var sUrl = bHasFullUrl ? sQueryUri : CCS.Globals.CCS_INDEX + "?" + sQueryUri;
+//         CCS.Debug.Console("Loading page " + sUrl + " ...");
+         CCS.Capture.LoadPage(sUrl, false, true); // initialize display
+         CCS.History.RestoreState();
+         
+      } else {
+         var sError = $(xResponse).find("error").find("message").text();
+         CCS.Debug.Alert("System failed to initialize:\n" + sError);
+      } // if
+      
+      return;
+   } // InitializeSystemSuccess
+   
+   /**
+    * If system initialization fails, InitializeSystemError attempts to reload the page in order to start over.
+    * 
+    * @param jqXHR {jqXHR object} jQuery xhr object created by the Ajax call
+    * @param textStatus {string} the status returned by the Ajax call
+    * @returns {none}
+    * 
+    * @author JJF (11/4/2011)
+    * 
+    * @notes:
+    * (11/4/2011) -> This function represents a kludge at best, designed to trick iOS into working. It adds significant time 
+    * to restarting the application, but so far it is the only way I have found to make this application storage concept work
+    * on iOS devices. It seems to me that this problem results from a bug in iOS. 
+    * 
+    * When iOS devices seek to re-enter the app after switching away from it, InitializeSystem() tries
+    * to send an Ajax call to ajax/ccs_ajax_main.php, but that call is never sent (as verified by running tail 
+    * on the server). In that situation, jqXHR.readyState = 0. Thus, iOS is behaving as if that PHP file, or at
+    * least the result of running that script, has been cached on board the device, something that should never happen.
+    * To trick iOS into restarting correctly, this function loads file index.php, which in turn loads file medentmobile.html.
+    * (Note that all other supported browsers re-initialize this system just fine, and never need to go through this 
+    * tedious process.) 
+    */
+   function InitializeSystemError() //jqXHR, textStatus) 
+   {
+      $(window).off("unload");
+      var sUrl = CCS.Globals.CCS_WEBSITE + "/index.php" + location.search;
+      var fCallback = function() {
+         location.assign(sUrl);
+         return;
+      }; // fCallback
+      if (IsIos() || !CCS.Debug.Alert("System initialization failed\nLoading " + sUrl, fCallback)) {
+         location.replace(sUrl);
+      } // if
+      return;
+   } // InitializeSystemError
+
+   /**
+    * InitializeSystem makes an Ajax call to initialize the system settings.
+    * 
+    * @author JJF (10/14/2011)
+    */
+   function InitializeSystem(sQuery) 
+   {
+      $(jqsInitializedField).val("0");
+   
+      var sErrorMessage_1 = ""; 
+      var sErrorMessage_2 = "";
+   
+      if (!navigator.onLine || !navigator.cookieEnabled) {
+         $("#loading").addClass("hidden");
+         if (!navigator.onLine) {
+            sErrorMessage_1 = "Medent Mobile requires Internet access to function!"; 
+            sErrorMessage_2 = "Please check your browser's and device's connection.";
+         } else {
+            sErrorMessage_1 = "Medent Mobile requires your browser to have cookies enabled!"; 
+            sErrorMessage_2 = "Please check your browser's settings and try again."; 
+         } // if
+         $("#errorMsg_1").text(sErrorMessage_1);
+         $("#errorMsg_2").text(sErrorMessage_2);
+         $("#error").removeClass("hidden");
+         CCS.Dialog.Alert(sErrorMessage_1 + "\n" + sErrorMessage_2);
+   
+      } else {
+         $("#error").remove();
+         
+         var sSavedSessionId  = CCS.Storage.Get("sSavedSessionId")  || ""; // default,
+         var sLastRequestTime = CCS.Storage.Get("sLastRequestTime") || "0"; // default
+         
+         var oData = {
+            function_name:    "InitializeSystem",
+            query_string:     sQuery,
+            sSavedSessionId:  sSavedSessionId,
+            iLastRequestTime: parseInt(sLastRequestTime, 10),
+            iNow:             Date.now()
+         }; 
+   
+         $.post(CCS.Globals.sMainAjaxScript, oData).done(InitializeSystemSuccess).fail(InitializeSystemError);
+   
+      } // if
+   
+      return;
+   } // InitializeSystem
+   
+   function HandleLoginScreen()
+   {
+//      CCS.Debug.Console("Entering HandleLoginScreen");
+      
+   
+      var sHidden = "keepHidden";
+      
+      if ($("#practice_id").children().length === 0) {
+         var hPracticeIds = CCS.Utilities.GetPracticeIds();
+         if (hPracticeIds.length > 0) {
+            $("#practice_id").append(hPracticeIds);
+            $("#new_practice_id").addClass(sHidden);
+            $("#practice_id").removeClass(sHidden);
+         } else {
+            $("#new_practice_id").removeClass(sHidden);
+            $("#practice_id").addClass(sHidden);
+            $("#practice_id + br").toggleClass(sHidden);
+         } // if
+         if (!$("#new_practice_id").hasClass(sHidden)) {
+            $("#new_practice_id").prop("required", "required"); //.focus()
+         } else {
+            $("#new_practice_id").removeProp("required");
+         } // if
+      } else {
+         $("#new_practice_id").addClass(sHidden);
+         $("#practice_id").removeClass(sHidden);
+      } // if
+   
+     
+//      CCS.Debug.Console("Leaving HandleLoginScreen");
+      return;
+   } // HandleLoginScreen
+
+   /**
+    * Logout logs the current user out of the system, resets system settings, clears the $_SESSION array,
+    * and populates fields on the web page appropriately.
+    * 
+    * @author JJF (10/18/2011)
+    */
+   function Logout(bSkipLogoutScript) 
+   {
+      bSkipLogoutScript = !!bSkipLogoutScript;
+      
+      $(jqsInitializedField).val("0");
+      CCS.Storage.Save(sMobileSectionField, "-1");
+      CCS.Storage.Save("sSavedSessionId", "");
+      CCS.Storage.Save("sLastRequestTime", 0); //Date.now());
+   
+      CCS.History.ClearHistory();
+      if (history.hasOwnProperty("replaceState")) {
+         history.replaceState({}, "");
+      } // if
+      
+      // prevent repetition of list initialization
+      clearInterval(_iInitialized);
+      _iInitialized = 0;
+      _iLastInitialized = 0;
+      
+      if (bSkipLogoutScript) {
+         HandleLoginScreen();
+      } else {
+         $.post(
+            CCS.Globals.sMainAjaxScript,
+            { // options to pass to script
+               function_name: "Logout"
+            }).
+         done(function() {
+            var sUrl = CCS.Globals.CCS_INDEX + "?mobile_section=-1";
+            CCS.Capture.LoadPage(sUrl);
+            return;
+         }); // done
+      } // if
+
+      return;
+   } // Logout
+   
+   /**
+    * IsPortrait determines if the device is currently in portrait orientation or not.
+    * 
+    * @param {none}
+    * @returns {boolean} true if the device is in portrait mode; false otherwise
+    * 
+    * @author JJF (12/2/2011)
+    * @modified JJF (3/22/2012)
+    * 
+    * @notes:
+    *    1. On iOS devices, one can test orientation with the window.orientation property:
+    *       portrait = 0 or 180, landscape = -90 or +90.
+    *       On some Android devices, however, the default orientation property (orientation = 0) 
+    *       occurs when the device is in landscape orientation.
+    *       As a result, portrait orientation will be defined as screen width < screen height for any non-iOS device.
+    *    2. Non mobile devices can appear in portrait mode.
+    */
+   function IsPortrait() 
+   {
+      var bIsPortrait;
+      if (bIsIos) {
+         bIsPortrait = (window.orientation === 0 || window.orientation === 180);
+      } else {
+         bIsPortrait = (screen.width < screen.height);
+      } // if
+      return bIsPortrait;
+   } // IsPortrait;
+   
+   /**
+    * BeforeExitingMM forces the system to save the state of a currently displaying form
+    * before leaving MM (e.g. when switching applications in iOS, or when using the browser's
+    * forward or back buttons).
+    * 
+    * @param {none}
+    * @returns {none}
+    * @author JJF (11/4/2011)
+    */
+   function BeforeExitingMM() 
+   {
+//      CCS.Debug.Console("Saving state before leaving window...");
+      
+      // Terminate any worker threads
+      CCS.Workers.StopAll();
+
+      // Save the current state to the history stack
+      CCS.History.SaveState("", true);
+      
+      return;
+   } // BeforeExiting
+   
+   /**
+    * RunInWebAppMode places a message across the bottom of the screen on iOS devices when a user
+    * first (re-)enters MM, inviting the user to add the Medent Mobile icon to the iOS home screen,
+    * so that the user can start MM in full screen mode. The message disappears when the user touches 
+    * the screen, or after a brief period.
+    * 
+    * @param {none}
+    * @returns {none}
+    * @author JJF (11/4/2011)
+    */
+   function RunInWebAppMode() 
+   {
+      var appModeNote = $("#appModeNote");
+       
+      if (window.navigator.hasOwnProperty("standalone") && !window.navigator.standalone){
+         appModeNote.show();
+         $("body").off("touchstart.appModeNote touchmove.appModeNote").on("touchstart.appModeNote touchmove.appModeNote", function(event) {
+            event.preventDefault();
+            $("body").off( "touchstart.appModeNote touchmove.appModeNote" );
+            appModeNote.fadeOut(500);
+         }); // on
+      } else {
+         appModeNote.remove();
+      } // if
+   
+      return;
+   } // RunInWebAppMode
+   
+   /**
+    * SetViewport tries to set the appropriate viewport for the particular class of device.
+    * 
+    * @param {none}
+    * @returns {none}
+    * 
+    * @author JJF (3/26/2012)
+    * 
+    * @notes
+    *    1. Do NOT include "height=device-height" as part of the viewport. Doing so will mess MM up on iOS.
+    *    2. For pinch-to-zoom to function correctly on iOS, the minimum-scale and maximum-scale factors
+    *       must be specified in addition to setting user-scalable=yes.
+    *    3. For iOS 6, I needed to remove "width=device-width" in order to prevent MM from displaying in letterbox format;
+    *       c.f. http://www.mobilexweb.com/blog/iphone-5-ios-6-html5-developers.
+    *    4. For information about a known bug in the viewport of Windows Phone 8,
+    *       c.f. http://timkadlec.com/2013/01/windows-phone-8-and-device-width/
+    */
+   function SetViewport() 
+   {
+      // create viewport element, if necessary
+      if (IsMobile()) {
+         var eOldViewport = document.getElementById("viewport");
+         var bNewViewport = (eOldViewport === null);
+         
+         var sMobileViewport = "initial-scale=1.0, user-scalable=yes, minimum-scale=1.0, maximum-scale=5.0";
+         var sTabletViewport = "initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"; 
+         var sControlWidth   = ", width=device-width";
+
+         var eViewport = document.createElement("meta");
+         eViewport.name = "viewport";
+         eViewport.id   = "viewport";
+         eViewport.content = sTabletViewport;
+         var eHead = document.getElementsByTagName("head")[0];
+         if (bNewViewport) {
+            eHead.appendChild(eViewport);
+         } else {
+            eHead.replaceChild(eViewport, eOldViewport);
+         }
+   
+         if (!IsTablet()) { // must be called after setting initial viewport
+            if (IsIos() < 6) {
+               sMobileViewport += sControlWidth;
+            } // if
+            var eNewViewport = eViewport.cloneNode(true);
+            eNewViewport.content = sMobileViewport;
+            eHead.replaceChild(eNewViewport, eViewport);
+         } // if
+
+         // Fix IE 10 on Windows Phone 8 bug
+         if (IsWindowsPhone()) {
+            var eViewportStyle = document.createElement("style");
+            eViewportStyle.appendChild(document.createTextNode("@-ms-viewport{width:auto!important}"));
+            eHead.appendChild(eViewportStyle);
+         } // if
+         
+//         CCS.Debug.Alert("Viewport is " + $("#viewport").attr("content"));
+//         CCS.Debug.Alert("Dimensions = " + screen.width + " x " + screen.height);
+      
+      } // if
+      
+      return;
+   } // SetViewport
+   
+   /**
+    * Loads the correct device-specific style sheet for the class of device in use.
+    * 
+    * @param {none}
+    * @returns {none}
+    * 
+    * @author JJF (3/26/2012)
+    */
+   function SetDeviceStyleSheet()
+   {
+      var sEmulator  = CCS.Preferences.GetEmulatorStatus();
+      var bIsTablet  = (IsTablet() || sEmulator === "tablet");
+      var bIsMobile  = ((IsMobile() && !bIsTablet) || sEmulator === "mobile");
+      var bIsDesktop = (!bIsTablet && !bIsMobile);
+      var bIsIos     = (IsIos());
+      
+      // Define stylesheets
+//    var eCommon   = document.getElementById("ssCommon"  );
+      var eJqueryUi = document.getElementById("ssJqueryUi");
+      var eDesktop  = document.getElementById("ssDesktop" );
+      var eTablet   = document.getElementById("ssTablet"  );
+      var eMobile   = document.getElementById("ssMobile"  );
+      var eIos      = document.getElementById("ssIos"     );
+      var eMenuBar  = document.getElementById("ssMenuBar" );
+      
+      // First, make sure that only the common style sheet is not disabled
+      eMenuBar.setAttribute( "disabled", "disabled");
+      eJqueryUi.setAttribute("disabled", "disabled");
+      eDesktop.setAttribute( "disabled", "disabled");
+      eTablet.setAttribute(  "disabled", "disabled");
+      eMobile.setAttribute(  "disabled", "disabled");
+      eIos.setAttribute(     "disabled", "disabled");
+
+      // Enable appropriate style sheets for this device
+      if (bIsTablet) {
+         $(eTablet).removeAttr("disabled");
+      } else if (bIsMobile) {
+         $(eMobile).removeAttr("disabled");
+      } else {
+         $(eDesktop).removeAttr("disabled");
+      } // if
+      if (bIsIos) {
+         $(eIos).removeAttr("disabled");
+      } // if
+
+      // Enable menubar stylesheet
+      $(eMenuBar).removeAttr("disabled");
+
+      // Enable jQuery stylesheet last (necessary for Safari, Chrome, IE, though I am not sure why)
+      $(eJqueryUi).removeAttr("disabled");
+
+
+//    CCS.Debug.Console("STYLESHEET DISABLED:" +
+//                      "\neCommon   -> " + eCommon.disabled +
+//                      "\neJqueryUi -> " + eJqueryUi.disabled +
+//                      "\neDesktop  -> " + eDesktop.disabled +
+//                      "\neTablet   -> " + eTablet.disabled +
+//                      "\neMobile   -> " + eMobile.disabled +
+//                      "\neIos      -> " + eIos.disabled +
+//                      "\neMenuBar  -> " + eMenuBar.disabled
+//    );
+
+
+      return;
+   } // SetDeviceStyleSheet
+   
+   function ModifyFixedHeaderInStylesheet()
+   {
+      var sUserAgent = navigator.userAgent;
+      var rxPattern = /Android\s*(\d)\./;
+      var asAndroidVersion = sUserAgent.match(rxPattern);
+      
+      if (asAndroidVersion !== null && asAndroidVersion.length > 0) {
+         var iVersion = parseInt(asAndroidVersion[1], 10);
+         if (iVersion < 4) {
+            // Older versions of Android do not support fixed headers well
+            
+            var i;
+            for (i = document.styleSheets.length - 1; i >= 0; i--) { // start with last style sheet
+               var ss = document.styleSheets[i];
+               if (!ss.disabled) {
+                  var iRules = ss.cssRules.length;
+                  var j;
+                  for (j = iRules - 1; j >= 0; j--) { // start with last rule
+                     var ssRule = ss.cssRules[j];
+                     if (ssRule.selectorText && ssRule.selectorText === ".phoneFixed") {
+                        var sNewCss = ssRule.cssText.replace("fixed", "absolute");
+                        document.styleSheets[i].deleteRule(j);
+                        document.styleSheets[i].insertRule(sNewCss, j);
+//                        CCS.Debug.Console("Replaced rule " + ssRule.selectorText + " in style sheet " + ss.title + " with <" + document.styleSheets[i].cssRules[j].cssText + ">");
+                     } // if
+                  } // for
+               } // if
+            } // for
+            
+         } // if
+      } // if
+       
+      return;
+   } // ModifyFixedHeaderInStylesheet
+   
+   /**
+    * SetDeviceEnvironment loads certain values from localStorage for setting up a particular 
+    * user on a particular device. This needs to run whenever MM starts and whenever a user
+    * successfully logs in (as indicated by mobile_section=set_session).
+    * 
+    * @param {none}
+    * @returns {none}
+    * 
+    * @author JJF (3/23/2012)
+    */
+   function SetDeviceEnvironment()
+   {
+      // Make sure session ID is set on page
+   
+      CCS.Preferences.SetEnvironment();
+      
+      // Turn off fixed headers for older versions of Android
+      ModifyFixedHeaderInStylesheet();
+
+      // Make browser full screen on mobile and tablet devices
+      if (IsMobile() || IsTablet()) {
+         if (CCS.FullScreen.SupportsFullScreen()) {
+            CCS.FullScreen.Request();
+         } // if
+      } // if
+   
+      return;
+   } // SetDeviceEnvironment
+   
+   function UseFixedHeaders()
+   {
+//      SEARCH: 
+      if (bUseFixedHeaders === undefined) {
+         bUseFixedHeaders = false;
+         // .titleBar > header has "position:fixed"
+         for (var i = document.styleSheets.length - 1; i >= 0; i--) { // start with last style sheet
+            var ss = document.styleSheets[i];
+//            CCS.Debug.Console("Is style sheet " + i + " = " + ss.title + " disabled? " + ss.disabled); // + " is from URL " + ss.href);
+            if (!ss.disabled) {
+               var iRules = ss.cssRules.length;
+//               CCS.Debug.Console("Style sheet " + i + " = " + ss.title + " contains " + iRules + " rules ...");
+               for (var j = iRules - 1; j >= 0; j--) { // start with last rule
+                  var ssRule = ss.cssRules[j];
+//                  CCS.Debug.Console("selector " + j + " = " + ssRule.selectorText);
+                  if (ssRule.selectorText && ssRule.selectorText === ".titleBar > header") {
+//                     CCS.Debug.Console("Rule for '.titleBar > header' found: " + ssRule.style.cssText);
+                     if (ssRule.style.position) { // && ssRule.style.position === "fixed") {
+                         bUseFixedHeaders = (ssRule.style.position.indexOf("fixed") > -1);
+//                         break SEARCH;
+                         return bUseFixedHeaders;
+                     } // if
+                  } // if
+               } // for
+            } // if
+         } // for
+      } // if
+      
+//      CCS.Debug.Console("bUseFixedHeaders = " + bUseFixedHeaders);
+      return bUseFixedHeaders;
+   } // UseFixedHeaders
+   
+
+   function GetAjaxTimeout(aiTimeout)
+   {
+      return aiTimeout.indexOf(aiTimeout.reduce(function(i, j) {
+         var iResult = 0;
+         if (i > 0 && j > 0) {
+            iResult = (j > Math.sqrt(i)) ? j : i;
+         } else {
+            iResult = Math.max(i, j);
+         } // if
+         return iResult;
+      })); // return
+   } // GetAjaxTimeout
+   
+   /**
+    * Sets parameters used globally in Ajax calls.
+    * 
+    * @param {none}
+    * @returns {none}
+    * 
+    * @author JJF (6/19/2013)
+    * 
+    * @notes
+    * 1. Addresses issues relating to errors when caching with iOS 6; c.f.
+    *    http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
+    * 2. Sets timeout values before retrying Ajax call by setting the initial timeout to the timeout
+    *    value used most frequently with success, then increasing by one second each time that Ajax
+    *    request times out.
+    */
+   function SetUpGlobalAjax()
+   {
+      // Set up global Ajax options
+      var bDebugAjax = false;
+      
+      // set current timeout to the most successful timeout value used so far 
+      var aiTimeout = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // number of Ajax calls per timeout setting (in seconds)
+      aiTimeout[3] = 1; // this index is the initial timeout interval
+   
+      // -> correct error in caching in iOS 6.0; c.f. 
+      $.ajaxSetup({
+         type: "post",
+         timeout: 120000, // always time out after two minutes to prevent "runaway spinners" in iOS
+         headers: {"cache-control": "no-cache"} // correct error in caching in iOS 6.0; c.f. http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
+      }); // ajaxSetup
+   
+      $.ajaxPrefilter(function(oOptions, oOriginalOptions, jqXhr) {
+         if (oOptions.url.indexOf("#") === -1 && (!oOptions.data || oOptions.data.indexOf("iNow=") === -1)) {
+            oOptions.data = (oOptions.hasOwnProperty("data") ? oOptions.data + "&" : "") + "iNow=" + Date.now();
+         } // if
+      }); // ajaxPrefilter
+   
+      return;
+   } // SetUpGlobalAjax
+   
+   
+   // Source code for a simple "Hello World" PDF, from the PDF manual
+   var _sHelloWorldPdf = "data:application/pdf;base64," +
+                 "JVBERi0xLjQNCjEgMCBvYmoNCjw8IC9UeXBlIC9DYXRhbG9nDQovT3V0bGluZXMgMiAwIFINCi9Q" +
+                 "YWdlcyAzIDAgUg0KPj4NCmVuZG9iag0KMiAwIG9iag0KPDwgL1R5cGUgL091dGxpbmVzDQovQ291" +
+                 "bnQgMA0KPj4NCmVuZG9iag0KMyAwIG9iag0KPDwgL1R5cGUgL1BhZ2VzDQovS2lkcyBbNCAwIFJd" +
+                 "DQovQ291bnQgMQ0KPj4NCmVuZG9iag0KNCAwIG9iag0KPDwgL1R5cGUgL1BhZ2UNCi9QYXJlbnQg" +
+                 "MyAwIFINCi9NZWRpYUJveCBbMCAwIDYxMiA3OTJdDQovQ29udGVudHMgNSAwIFINCi9SZXNvdXJj" +
+                 "ZXMgPDwgL1Byb2NTZXQgNiAwIFINCi9Gb250IDw8IC9GMSA3IDAgUiA+Pg0KPj4NCj4+DQplbmRv" +
+                 "YmoNCjUgMCBvYmoNCjw8IC9MZW5ndGggNzMgPj4NCnN0cmVhbQ0KQlQNCi9GMSAyNCBUZg0KMTAw" +
+                 "IDEwMCBUZA0KKEhlbGxvIFdvcmxkKSBUag0KRVQNCmVuZHN0cmVhbQ0KZW5kb2JqDQo2IDAgb2Jq" +
+                 "DQpbL1BERiAvVGV4dF0NCmVuZG9iag0KNyAwIG9iag0KPDwgL1R5cGUgL0ZvbnQNCi9TdWJ0eXBl" +
+                 "IC9UeXBlMQ0KL05hbWUgL0YxDQovQmFzZUZvbnQgL0hlbHZldGljYQ0KL0VuY29kaW5nIC9NYWNS" +
+                 "b21hbkVuY29kaW5nDQo+Pg0KZW5kb2JqDQp4cmVmDQowIDgNCjAwMDAwMDAwMDAgNjU1MzUgZg0K" +
+                 "MDAwMDAwMDAwOSAwMDAwMCBuDQowMDAwMDAwMDc0IDAwMDAwIG4NCjAwMDAwMDAxMjAgMDAwMDAg" +
+                 "bg0KMDAwMDAwMDE3OSAwMDAwMCBuDQowMDAwMDAwMzY0IDAwMDAwIG4NCjAwMDAwMDA0NjYgMDAw" +
+                 "MDAgbg0KMDAwMDAwMDQ5NiAwMDAwMCBuDQp0cmFpbGVyDQo8PCAvU2l6ZSA4DQovUm9vdCAxIDAg" +
+                 "Ug0KPj4NCnN0YXJ0eHJlZg0KNjI1DQolJUVPRg==";
+
+   /**
+    * Determines if a browser can display a PDF as an image or if it requires a plugin.
+    * 
+    * @param {none}
+    * @returns {bool} true if a browser can display a PDF as an image
+    * 
+    * @author JJF  (2/5/2014)
+    */
+   function SupportsPdfImages()
+   {
+      var bSupport = false;
+      try {
+         var eImage  = document.createElement("img");
+         eImage.type = "application/pdf";
+         eImage.src  = _sHelloWorldPdf;
+        
+         // For debugging only
+         // CCS.Debug.Alert(eImage.width + "x" + eImage.height);
+         
+         bSupport = (eImage.height > 0 && eImage.width > 0);
+
+      } catch (e) {
+         bSupport = false;
+      } // try
+
+      return bSupport;
+   } // SupportsPdfImages
+
+
+   /**
+    * Determines if a browser can display a PDF or not.
+    * 
+    * @param {none}
+    * @returns {bool} true if a browser can display a PDF
+    * 
+    * @author JJF  (2/5/2014)
+    */
+   function SupportsPdfs()
+   {
+      var bSupport = false;
+      try {
+         var Pdf = window.URL.createObjectURL(_sHelloWorldPdf);
+         var eObject = document.createElement("object");
+         eObject.type = "application/pdf";
+         eObject.data = Pdf;
+        
+         // For debugging only
+         // CCS.Debug.Alert(eObject.width + "x" + eObject.height);
+         
+         bSupport = (eObject.height > 0 && eObject.width > 0);
+         
+         window.URL.revokeObjectURL(Pdf);
+         
+      } catch (e) {
+         bSupport = false;
+      } // catch
+      
+      return bSupport;
+   } // SupportsPdfs
+
+   
+
+   /**
+    * Informs PHP of browser capabilities
+    */
+   function SetCapabilities()
+   {
+      var Options = {
+            bViewPdfAsImage  : !!SupportsPdfImages(),
+            bViewPdfs        : !!SupportsPdfs()
+      }; // Options
+      
+    
+      $.post("ajax/setcapabilities.php", Options);
+      
+   } // SetCapabilities
+
+   
+   /**
+    * LoadWhenDomIsReady runs when the main HTML file first loads to initialize the system.
+    * 
+    * @param {none}
+    * @returns {none}
+    * @author JJF (11/4/2011)
+    */
+   function LoadWhenDomIsReady()
+   {
+
+      try {
+//         CCS.Debug.Console("Entering LoadWhenDomIsReady");
+         
+         var bShowSystemSetup = false; // Show debugging information about system setup?
+         var bShowEvents      = false; // Track all Ajax messages?
+
+         // Set up global Ajax options
+         SetUpGlobalAjax();
+         
+         // show events (for debugging only)
+         if (bShowEvents) {
+            CCS.Debug.ShowEvents();
+         } // if
+         
+         // Determine system capabilities (for sending to web server)
+         SetCapabilities();
+         
+         // Get the information passed in when this page was loaded
+         var sQuery = GetInitialQuery();
+
+         // adjust the page's min-height to be at least as tall as the display
+         var iMinHeight = (IsMobile()) ? Math.max(screen.width, screen.height) : screen.height;
+         $("#simulate-mobile-page").css("min-height", iMinHeight);
+      
+         // Initialize system
+//            CCS.Debug.Console("Initializing system: sQuery = " + sQuery + " ...");
+         InitializeSystem(sQuery);
+         
+         // Test whether the device's application storage cache needs updating
+         CCS.AppCache.Check();
+         
+         // Modify page variables as needed for mobiletesting
+         SetUpTestingEnvironment();
+         
+         if (IsMobile()) {
+            bIsIos = IsIos();
+         } // if
+   
+         CCS.Capture.AddSystemwideEventListeners();
+         
+         // invite users to run in WebApp mode
+         // RunInWebAppMode();
+   
+         // capture the unload event when leaving the web page
+//            CCS.Debug.Console("Capturing unload event ...");
+         $(window).off("unload").on("unload", function() {
+            BeforeExitingMM();
+         }); // unload
+   
+         // show system configuration information (for debugging purposes)
+         if (bShowSystemSetup) {
+            CCS.Debug.ShowSystemSetup();
+         } // if
+         
+      } catch (e) {
+         CCS.Loading.Stop();
+         if (e.constructor !== DOMException) {
+            CCS.Debug.Alert("UNCAUGHT EXCEPTION: " + e.name + " => " + e.message, true);
+         } // if
+      } // catch
+
+//      CCS.Debug.Console("Leaving LoadWhenDomIsReady");
+      return;
+   } // LoadWhenDomIsReady
+
+   
+   
+   // export public API for CCS.Startup module
+   CCS.Startup.sMobileSectionField      = sMobileSectionField;
+   CCS.Startup.sPageContainerField      = jqsPageContainerField;
+   CCS.Startup.sTitleBar                = jqsTitleBar;
+
+   CCS.Startup.HandleLoginScreen        = HandleLoginScreen;
+   CCS.Startup.InitializeLists          = InitializeLists;
+   CCS.Startup.IsDesktop                = IsDesktop;
+   CCS.Startup.IsIos                    = IsIos;
+   CCS.Startup.IsIpad                   = IsIpad;
+   CCS.Startup.IsMobile                 = IsMobile;
+   CCS.Startup.IsPortrait               = IsPortrait;
+   CCS.Startup.IsTablet                 = IsTablet;
+   CCS.Startup.IsTouch                  = IsTouch;
+   CCS.Startup.IsWindowsPhone           = IsWindowsPhone;
+   CCS.Startup.LoadWhenDomIsReady       = LoadWhenDomIsReady;
+   CCS.Startup.Logout                   = Logout;
+   CCS.Startup.SetDeviceEnvironment     = SetDeviceEnvironment;
+   CCS.Startup.SetDeviceStyleSheet      = SetDeviceStyleSheet;
+   CCS.Startup.SetViewport              = SetViewport;
+   CCS.Startup.UseFixedHeaders          = UseFixedHeaders;
+
+
+   Object.seal(CCS.Startup);
+   return;
+}()); // namespace
+
+
+/**/

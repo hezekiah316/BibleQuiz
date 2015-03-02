@@ -1,0 +1,286 @@
+/**
+ * Customization for responsive grids of menu items
+ */
+/*@media all and (orientation:portrait) {*/
+   .bq-breakpoint .ui-block-a,
+   .bq-breakpoint .ui-block-b {
+      width: 50% !important;
+   }
+   .bq-breakpoint .ui-block-a {
+      float: left !important;
+   }
+   .bq-breakpoint .ui-block-b {
+      float: right !important;
+   }
+/*}*/
+
+/**
+ * Generic classes
+ */
+.redText {
+   color: #ff0000;
+}
+.yellowText {
+   color: yellow;
+}
+.greyText {
+   color: gray;
+}
+.greenText {
+   color: #008000;
+}
+.blueText {
+   color: #0000ff;
+}
+.smallText {
+   font-size: 0.75em !important;
+}
+.largeText {
+   font-size: 1.1em !important;
+}
+.hugeText {
+   font-size: 1.2em !important;
+}
+.doubleText {
+   font-size: 1.5em !important;
+}
+.strongText {
+   font-weight: bold !important;
+}
+.emphaticText {
+   font-style: italic !important;
+}
+.underlineText {
+   text-decoration: underline !important;
+}
+.noDecorations {
+   text-decoration: none !important;
+}
+.strikethroughText {
+   text-decoration: line-through !important;
+}
+.noWeight {
+   font-weight: normal !important;
+}
+.noSize {
+   font-size: 1em !important;
+}
+.noPadding {
+   padding: 0 !important;
+}
+.highlightedText {
+   background-color: yellow !important;
+}
+.noBorder {
+   border: none !important;
+}
+.noBorderBottom {
+   border-bottom: none !important;
+}
+.noMargin {
+   margin: 0 !important;
+}
+.centerAlign {
+   text-align: center !important;
+}
+.leftAlign {
+   text-align: left !important;
+}
+.rightAlign {
+   text-align: right !important;
+}
+.paddingVertical {
+	padding-bottom: 1em;
+	padding-top: 1em;
+}
+.paddingRight {
+	padding-right: .5em;
+}
+.keepHidden {
+   display: none !important;
+}
+.outOfSight {
+   height: 0;
+   left: -10000px;
+   position: absolute;
+   top: -10000px;
+   width: 0;
+}
+
+/**
+ *    Styles for individual elements
+ */
+caption {
+   font-weight: bold;
+}
+/**
+ *    Styles for overwriting jquery.mobile styles
+ */
+
+.noButtonBorder label.ui-btn-down-c,
+.noButtonBorder label.ui-btn-hover-c,
+.noButtonBorder label.ui-btn-up-c {
+   border: 0 !important;
+}
+.noButtonBorder a.ui-link-inherit {
+   padding: 0 !important;
+}
+.noButtonBorder.ui-btn {
+   padding-left:  .5em !important;
+   padding-right: .5em !important;
+}
+
+/**
+ *    Start Page classes
+ */
+#BQ_Start_Logo {
+   margin: 1em auto;
+   max-height: 50%;
+}
+/**
+ *    Game Page classes
+ */
+
+.question {
+   color: blue;
+    /*height: 8em;*/
+   padding-bottom: 1em;
+   white-space: normal !important;
+}
+/*
+.answerButton {
+   height: 12em;
+   white-space: normal !important;
+}
+*/
+.tetragrammaton {
+   font-variant: small-caps;
+}
+.tetragrammaton:first-letter {
+   font-variant: normal;
+}
+/*
+.ui-icon-answerA:after,
+.ui-icon-answerB:after,
+.ui-icon-answerC:after,
+.ui-icon-answerD:after {
+   background-size: 18px 18px;
+}
+.ui-icon-answerA:after {
+   background-image: url("A.png");
+}
+.ui-icon-answerB:after {
+   background-image: url("B.png");
+}
+.ui-icon-answerC:after {
+   background-image: url("C.png");
+}
+.ui-icon-answerD:after {
+   background-image: url("D.png");
+}
+*/
+/**/
+   
+/**
+ *    Pause, Results pages
+ */
+
+/* Customization for responsive grids of menu items  */
+.gameScores-breakpoint .ui-block-a,
+.gameScores-breakpoint .ui-block-b,
+.gameScores-breakpoint .ui-block-c {
+	margin-bottom: 2em;
+   width: 100% !important;
+}
+.gameScores {
+   border-collapse: collapse;
+   margin-left: auto;
+   margin-right: auto;
+}
+.gameScores th,
+.gameScores td {
+/*   
+   border-top: gray solid 1px;
+   border-bottom: gray solid 1px;
+   border-left: 0;
+   border-right: 0;
+*/
+   border: 0;
+   padding: 1em 0;
+}
+.gameScores th:first-of-type, 
+.gameScores td:first-of-type {
+   min-width: 10em !important;
+   text-align: left;
+}
+.gameScores th:not(:first-of-type), 
+.gameScores td:not(:first-of-type) {
+	padding-left: .5em;
+   text-align: right;
+}
+.gameScores_left,
+.gameScores_center,
+.gameScores_right {
+   display: block;
+   margin-left: 0;
+   margin-right: 0;
+}
+@media (min-width: 40em) {
+	.gameScores-breakpoint .ui-block-a,
+	.gameScores-breakpoint .ui-block-b {
+	   width: 48% !important;
+	}
+	.gameScores_left,
+   .gameScores_center {
+      float: left;
+   }
+   .gameScores_center {
+      margin-left: 1em;
+   }
+}
+@media (min-width: 60em) {
+	.gameScores-breakpoint .ui-block-a,
+	.gameScores-breakpoint .ui-block-b,
+	.gameScores-breakpoint .ui-block-c {
+	   width: 32% !important;
+	}
+   .gameScores_right {
+      float: left;
+      margin-left: 1em;
+   }
+}
+
+/**/
+
+
+/**
+ * DataEntry page
+ */
+#BQ_DataEntry label {
+   font-weight: bold;
+}
+#BQ_DataEntry code {
+   font-weight: bold;
+}
+#BQ_DataEntry legend {
+   font-weight: bold;
+}
+
+
+
+
+
+
+/**
+ * Custom styles for overwriting jQuery Mobile styles
+ */
+
+/* Hide the number input on a range slider */
+.full-width-slider input {
+    display: none;
+}
+.full-width-slider .ui-slider-track {
+    margin-left: 15px;
+}
+
+/**/

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" manifest="BQ.manifest">
+<head>
+   <meta charset="utf-8">
+
+   <title>Bible Quiz</title>
+   <meta name="application-name" content="Bible Quiz">
+   <meta name="Author" content="Jeff Falter">
+   <meta name="Copyright" content="copyright 2013-2015 by Jeff Falter">
+   <meta name="Description" content="Bible trivia quiz for fun and educational purposes">
+
+   <!--  These tags are needed for mobile devices -->
+   <meta name="mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="apple-mobile-web-app-status-bar-style" content="black">
+   <meta name="apple-mobile-web-app-title" content="Bible Quiz">
+   <link rel="address bar icon" href="images/BQ-32.png">
+   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+
+   <!-- jQuery scripts -->
+   <link rel="stylesheet" href="jquery/jquery.mobile-1.4.5.min.css">
+   <script src="jquery/jquery-2.1.3.js"></script>
+   <script src="jquery/jquery.mobile-1.4.5.min.js"></script>
+	<!-- <script src="jquery/jquery.idb.source.js"></script> -->
+
+   <!-- My style sheet -->
+   <link rel="stylesheet" type="text/css" href="BQ.css">
+
+   <!-- My script -->
+   <script type="text/javascript" src="BQ.js"></script>
+
+   <!-- Icons for the user's home screen -->
+   <link rel="shortcut icon" sizes="196x196" href="images/BQ-196.png">
+   <link rel="apple-touch-icon" sizes="128x128" href="images/BQ-128.png" />
+   <meta name="msapplication-TileImage" content="images/BQ-300.png"/>
+
+</head>
+
+<body>
+
+   <!-- ======================================================================================= -->
+
+
+   <div data-role="page" id="BQ_Start">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_Start_Title" data-theme="b">
+         <h1 id="BQ_Start_app_name">Bible Quiz</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_Start_PageContent" data-role="content">
+         <div class="centerAlign">
+            <img id="BQ_Start_Logo" src="images/BQ-300.png" alt="Bible Quiz logo"/>
+            <p>Ready to test your knowledge?</p>
+            <a id="BQ_Start_NewGame" href="#BQ_Game" data-role="button" data-theme="a">Start</a>
+         </div>
+      </div><!-- data-role: content -->
+
+      <div data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_Start_secondary">
+               <li><a id="BQ_Start_Config" href="#BQ_Config" data-icon="gear">Config</a></li>
+               <li><a href="#BQ_Stats"  data-icon="bullets">Stats</a></li>
+               <li><a href="#BQ_About"  data-icon="info">About</a></li>
+               <!-- <li><a onclick="window.close()" data-icon="delete">Exit</a></li> -->
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_Start -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_Config">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_Config_Title" data-theme="b">
+         <h1 id="BQ_Config_app_name">Bible Quiz | Options</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_Config_PageContent" data-role="content">
+
+         <form name="BQ_Config_Form">
+
+            <label for="BQ_Config_Questions"><h2>Questions to Include</h2></label>
+            <input name="BQ_Config_Questions" id="BQ_Config_Questions" type="range" min="10" max="100" value="100"  data-highlight="true" data-theme="a" />
+
+            <label for="BQ_Config_Mode"><h2>Game Mode</h2></label>
+            <select name="BQ_Config_Mode" id="BQ_Config_Mode" data-role="slider" data-track-theme="a" data-theme="a">
+               <option value="quiz" selected>Quiz</option>
+               <option value="study">Study</option>
+            </select>
+
+            <h2>Sections to Include</h2>
+            <div class="ui-grid-a">
+                <div class="ui-block-a">
+                   <fieldset data-role="controlgroup">
+                       <legend>Old Testament:</legend>
+                       <input type="checkbox" name="BQ_Config_Torah" id="BQ_Config_Torah" checked />
+                       <label for="BQ_Config_Torah">Pentateuch</label>
+                       <input type="checkbox" name="BQ_Config_History" id="BQ_Config_History" checked />
+                       <label for="BQ_Config_History">Historical Books</label>
+                       <input type="checkbox" name="BQ_Config_Prophets" id="BQ_Config_Prophets" checked />
+                       <label for="BQ_Config_Prophets">Prophets</label>
+                       <input type="checkbox" name="BQ_Config_Writings" id="BQ_Config_Writings" checked />
+                       <label for="BQ_Config_Writings">Psalms and Wisdom Literature</label>
+                       <input type="checkbox" name="BQ_Config_Deutero" id="BQ_Config_Deutero" checked />
+                       <label for="BQ_Config_Deutero">Deuterocanonicals / Apocrypha</label>
+                   </fieldset>
+               </div>
+                <div class="ui-block-b">
+                   <fieldset data-role="controlgroup">
+                       <legend>New Testament:</legend>
+                       <input type="checkbox" name="BQ_Config_Gospels" id="BQ_Config_Gospels" checked />
+                       <label for="BQ_Config_Gospels">Gospels</label>
+                       <input type="checkbox" name="BQ_Config_Acts" id="BQ_Config_Acts" checked />
+                       <label for="BQ_Config_Acts">Acts and Pauline Writings</label>
+                       <input type="checkbox" name="BQ_Config_RestNT" id="BQ_Config_RestNT" checked />
+                       <label for="BQ_Config_RestNT">Rest of the New Testament</label>
+                   </fieldset>
+                </div>
+            </div><!-- grid-a -->
+
+<!--
+            <label for="BQ_Config_Bible"><h2>Preferred Bible translation</h2></label>
+            <input type="text" name="BQ_Config_Bible" id="BQ_Config_Bible" value="NRSV" readonly />
+ -->
+
+         </form>
+      </div><!-- data-role: content -->
+
+      <div data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_Config_secondary">
+               <li><a href="" class="noButtonBorder" data-rel="back" data-icon="back">Back</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_Config -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_Game">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_Game_Title" data-theme="b">
+         <h1 id="BQ_Game_app_name">Bible Quiz | Play</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_Game_PageContent" data-role="content">
+
+         <fieldset data-role="controlgroup">
+         
+	         <legend class="question">In the book of Deuteronomy, which statement follows "Hear, O Israel: The <span class='tetragrammaton'>Lord</span> is our God, the <span class='tetragrammaton'>Lord</span> alone."</legend>
+	
+	         <input type="radio" name="answer" id="answerA" value="A" data-theme="a" />
+	         <label for="answerA">You shall have no other gods before me.</label>
+
+	         <input type="radio" name="answer" id="answerB" value="B" data-theme="a" />
+	         <label for="answerB">You shall love the <span class='tetragrammaton'>Lord</span> your God with all your heart, and with all your soul, and with all your might."</label>
+	
+            <input type="radio" name="answer" id="answerC" value="C" data-theme="a" />
+	         <label for="answerC">You shall remember all the ways which the <span class='tetragrammaton'>Lord</span> your God has led you.</label>
+	            
+            <input type="radio" name="answer" id="answerD" value="D" data-theme="a" />
+	         <label for="answerD">You shall not put the <span class='tetragrammaton'>Lord</span> your God to the test.</label>
+
+         </fieldset>
+      </div><!-- data-role: content -->
+
+      <div id="BQ_footer" data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_Game_secondary">
+               <li><a>23 seconds ...<br/>Final Answer</a></li>
+               <li><a href="#BQ_Pause" data-icon="clock">Pause</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_Game -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_Pause">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_Pause_Title" data-theme="b">
+         <h1 id="BQ_Pause_app_name">Bible Quiz | Pause</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_Pause_PageContent" data-role="content">
+
+         <p>You have paused your game. Here's how you are doing so far:</p>
+         <table class="gameScores">
+            <thead>
+               <tr><th></th><th></th></tr>
+            </thead>
+            <tbody>
+               <tr><td>Score</td>      <td id="BQ_Pause_Score"    >75%</td></tr>
+               <tr><td>Correct</td>    <td id="BQ_Pause_Correct"  >12</td></tr>
+               <tr><td>Incorrect</td>  <td id="BQ_Pause_Incorrect">4</td></tr>
+               <tr><td>Remaining</td>  <td id="BQ_Pause_Remaining">84</td></tr>
+               <tr><td>Time so far</td><td id="BQ_Pause_Time"     >2:51</td></tr>
+            </tbody>
+         </table>
+
+
+      </div><!-- data-role: content -->
+
+      <div id="BQ_Pause_Footer" data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_Pause_secondary">
+               <li><a href="#BQ_Game" data-role="button" data-icon="check">Resume Play</a></li>
+               <li><a href="#BQ_Start" data-role="button" data-icon="home">Quit Game</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_Pause -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_Results">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_Results_Title" data-theme="b">
+         <h1 id="BQ_Results_app_name">Bible Quiz | Results</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_Results_PageContent" data-role="content">
+         <h2>Game Results</h2>
+         <table class="gameScores">
+            <thead>
+               <tr><th></th><th></th></tr>
+            </thead>
+            <tbody>
+               <tr><td>Score</td>                         <td id="BQ_Results_Score"      >95%</td></tr>
+               <tr><td>Correct</td>                       <td id="BQ_Results_Correct"    >95</td></tr>
+               <tr><td>Incorrect</td>                     <td id="BQ_Results_Incorrect"  >5</td></tr>
+               <tr><td>Total Time</td>                    <td id="BQ_Results_Time"       >7:25</td></tr>
+               <tr><td></td><td></td></tr>
+               <tr><td>OLD TESTAMENT</td>                 <td id="BQ_Results_OT"         >57 / 60</td></tr>
+               <tr><td>Pentateuch</td>                    <td id="BQ_Results_Pentateuch" >15 / 15</td></tr>
+               <tr><td>Historical Books</td>              <td id="BQ_Results_History"    >14 / 14</td></tr>
+               <tr><td>Prophets</td>                      <td id="BQ_Results_Prophets"   >10 / 10</td></tr>
+               <tr><td>Psalms and Wisdom Literature</td>  <td id="BQ_Results_Psalms"     >15 / 15</td></tr>
+               <tr><td>Deuterocanonicals / Apocrypha</td> <td id="BQ_Results_Apocrypha"  >3  /  6</td></tr>
+               <tr><td></td><td></td></tr>
+               <tr><td>NEW TESTAMENT</td>                 <td id="BQ_Results_NT"         >38 / 40</td></tr>
+               <tr><td>Gospels</td>                       <td id="BQ_Results_Gospels"    >15 / 15</td></tr>
+               <tr><td>Acts and Pauline Writings</td>     <td id="BQ_Results_Acts"       >12 / 13</td></tr>
+               <tr><td>Rest of the New Testament</td>     <td id="BQ_Results_Rest"       >11 / 12</td></tr>
+            </tbody>
+         </table>
+      </div><!-- data-role: content -->
+
+      <div data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_Results_secondary">
+               <li><a href="#BQ_Start" class="noButtonBorder" data-role="button" data-theme="b" data-icon="home">Main Menu</a></li>
+               <li><a href="#BQ_Stats" class="noButtonBorder" data-role="button" data-theme="b" data-icon="bars">Statistics</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_Results -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_About">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_About_Title" data-theme="b">
+         <h1 id="BQ_About_app_name">Bible Quiz | About</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_About_PageContent" data-role="content">
+         <div data-role="collapsible-set" data-theme="a" data-content-theme="a">
+
+             <div data-role="collapsible" data-theme="a" data-inset="false">
+               <h2>Installation</h2>
+               <p>
+		            Bible Quiz needs to store its database in your browser's
+		            permanent memory. This database contains questions and
+		            answers along with associated  biblical references and
+		            source information. The total size of the database is
+		            approximately <span class="download_size"></span>. It may take
+		            a few moments to download and install.
+		         </p>
+		         <p>
+		            As the number of questions available on the Bible Quiz website
+		            grows, updates to the database on your browser will be
+		            downloaded to your browser "behind the scenes", so that you
+		            can keep playing without interruption.
+		         </p>
+		         <p>
+		            Note: This website receives no personally identifiable
+		            information about you, nor does it track you in any way, nor
+		            does it display advertisements.
+            </div>
+
+            <div data-role="collapsible" data-theme="a" data-inset="false">
+               <h2>How to Play</h2>
+               <p>From the Home page, press Start. You will jump right into a new game. When the game screen appears,
+                  you will see the Bible trivia question at the top of the page in blue. Below it you will
+                  see four possible answers. Press the button you think contains the right answer. The game
+                  will let you know if you got it right or not.</p>
+               <p>You can pause the game at any time. When you do, you will see your stats for the game so far.
+                  You may, at this point, either quit the game or return to play.</p>
+               <p>When you finish the game, you will be brought to a summary page, where you will see your stats
+                  for the current game.</p>
+               <p>You also have some configuration options available on the Config page:</p>
+               <ul>
+                  <li><b>Sections of the Bible to include</b>. You can choose one or more of the following
+                     sections (the default is all sections):
+                     <ul>
+                        <li>Pentateuch</li>
+                        <li>Historical Books</li>
+                          <li>Prophets</li>
+                          <li>Psalms and Wisdom Literature</li>
+                          <li>Deuterocanonicals / Apocrypha</li>
+                          <li>Gospels</li>
+                          <li>Acts and Pauline Writings</li>
+                          <li>Rest of the New Testament</li>
+                     </ul>
+                  </li>
+                  <li><b>Game mode</b>. You have two choices: quiz mode (the default), or study mode.
+                     <ul>
+                        <li><b>Quiz Mode</b>: you have up to 30 seconds to answer each question.
+                           When you choose your answer, the game will let you know if you are right,
+                           and if not it will show you the correct answer. After 10 seconds,
+                           the next question will appear.</li>
+                        <li><b>Study Mode</b>: you can take as much time as you like to answer
+                           each question. Once you answer, the game will let you know if your answer
+                           is correct or not. It will also show you the relevant Scripture reference(s)
+                           for the correct answer. You can click on the answer to see the verse if you
+                           want to. When you are ready, the game will continue. (Note that in this mode,
+                           all questions will come from prior versions of the Bible Content Exams
+                           published by the Presbyterian Church (U.S.A.).)</li>
+                     </ul>
+                  </li>
+                  <li><b>Number of questions</b>. Each game can have from 1 to 100 questions. (The default is 100.)</li>
+               </ul>
+               <p>If you are using a mobile device, consider adding an icon to your home screen.
+                  Then you can play the game in full screen mode.</p>
+               <p><i>Note</i>: Since this game resides entirely in your browser's permanent memory,
+                  you can play this game even when you are not connected to the Internet.</p>
+            </div>
+
+            <div data-role="collapsible" data-theme="a" data-inset="false">
+               <h2>Sources</h2>
+               <p>Many of the questions and answers in this quiz come from the Bible Content Exam, published
+                  annually by the <a href="http://www.pcusa.org">Presbyterian Church (U.S.A.)</a>.</p>
+               <p>The software and formatting used on this site are copyright 2015 by Jeff Falter. All rights reserved.</p>
+               <p>Special thanks to Savannah Williams for designing the custom icons used on this site.</p>
+               <p>The Bible reference links are from <a href="http://www.biblia.com/bible/nrsv/isaiah43.1-3a">Biblia.com</a>,
+                  a service of <a href="http://www.logos.com">Logos Bible Software</a>.</p>
+               <p>The Scripture quotations contained herein are from the New Revised Standard Version Bible,
+                  copyright 1989, by the Division of Christian Education of the National Council of the
+                  Churches of Christ in the U.S.A. Used by permission. All rights reserved. (The common
+                  abbreviation for this version is NRSV.)</p>
+               <p>Currently, the Bible Quiz database contains <span id="BQ_About_TotalQuestions"></span> questions.</p>
+		         <table class="gameScores">
+		            <thead>
+		               <tr><th>Section</th><th>Questions</th></tr>
+		            </thead>
+		            <tbody>
+		               <tr><td>OLD TESTAMENT</td>                 <td id="BQ_About_OT"         ></td></tr>
+		               <tr><td>Pentateuch</td>                    <td id="BQ_About_Pentateuch" ></td></tr>
+		               <tr><td>Historical Books</td>              <td id="BQ_About_History"    ></td></tr>
+		               <tr><td>Prophets</td>                      <td id="BQ_About_Prophets"   ></td></tr>
+		               <tr><td>Psalms and Wisdom Literature</td>  <td id="BQ_About_Psalms"     ></td></tr>
+		               <tr><td>Deuterocanonicals / Apocrypha</td> <td id="BQ_About_Apocrypha"  ></td></tr>
+		               <tr><td></td><td></td></tr>
+		               <tr><td>NEW TESTAMENT</td>                 <td id="BQ_About_NT"         ></td></tr>
+		               <tr><td>Gospels</td>                       <td id="BQ_About_Gospels"    ></td></tr>
+		               <tr><td>Acts and Pauline Writings</td>     <td id="BQ_About_Acts"       ></td></tr>
+		               <tr><td>Rest of the New Testament</td>     <td id="BQ_About_Rest"       ></td></tr>
+		            </tbody>
+		         </table>
+            </div>
+
+            <div data-role="collapsible" data-theme="a" data-inset="false">
+               <h2>Feeback</h2>
+               <p>Your feedback is important! Feedback, corrections, questions, comments?
+                  Send e-mail to <a href="mailto:developer@hezekiah316.com">Jeff</a>.</p>
+            </div>
+
+            <div data-role="collapsible" data-theme="a" data-inset="false">
+               <h2>About the Author</h2>
+               <h3>Occupation(s)</h3>
+               <p>My name is Jeff Falter. I am an ordained minister in the Presbyterian Church (U.S.A.),
+                a member of the <a href="www.pbygenval.org">Presbytery of Genessee Valley</a>.
+                I have served churches in</p>
+               <ul>
+                  <li>Tenino, Washington</li>
+                  <li>Marlinton, West Virginia</li>
+                  <li>Asheboro, North Carolina</li>
+                  <li>Cullman, Alabama</li>
+                  <li>Elkins, West Virginia</li>
+                  <li>Dundee, New York</li>
+               </ul>
+               <p>I have also served as a college chaplain in Keuka Park, New York.</p>
+               <p>I am currently working for <a href="http://www.medent.com">Community Computer Service</a>
+                  as a computer programmer. Prior to attending seminary, I also worked as a
+                  software engineer and an electronic engineer.</p>
+               <h3>Education:</h3>
+               <ul>
+                  <li>Master of Divinity, Union Presbyterian Theological Seminary</li>
+                  <li>Bachelor of Science in Mathematics, George Mason University</li>
+                  <li>High School Diploma, Gar-Field Senior High School, Dale City, Virginia</li>
+               </ul>
+               <h3>Additional</h3>
+               <p>You can view some of my theological reflections on <a href="http://jefffalter.wordpress.com">WordPress</a>.</p>
+            </div>
+         </div>
+      </div><!-- data-role: content -->
+
+      <div data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_About_secondary">
+               <li><a href="" class="noButtonBorder" data-rel="back" data-icon="back">Back</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_About -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_Stats">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_Stats_Title" data-theme="b">
+         <h1 id="BQ_Stats_app_name">Bible Quiz | Stats</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_Stats_PageContent" data-role="content">
+         <h2>Total Scores</h2>
+         <p>
+            You have played
+            <span id="BQ_Stats_Total_Games" class="strongText">0</span>
+            games so far. You have answered
+            <span id="BQ_Stats_Total_Score" class="strongText">0</span>%
+            of the questions correctly.
+         </p>
+         <table class="gameScores">
+            <thead>
+               <tr><th>Section</th><th>Right / Wrong</th></tr>
+            </thead>
+            <tbody>
+               <tr><td>WHOLE BIBLE</td>                   <td id="BQ_Stats_Total_Bible  "    >0 / 0</td></tr>
+               <tr><td></td><td></td></tr>
+               <tr><td>OLD TESTAMENT</td>                 <td id="BQ_Stats_Total_OT"         >0 / 0</td></tr>
+               <tr><td>Pentateuch</td>                    <td id="BQ_Stats_Total_Pentateuch" >0 / 0</td></tr>
+               <tr><td>Historical Books</td>              <td id="BQ_Stats_Total_History"    >0 / 0</td></tr>
+               <tr><td>Prophets</td>                      <td id="BQ_Stats_Total_Prophets"   >0 / 0</td></tr>
+               <tr><td>Psalms and Wisdom Literature</td>  <td id="BQ_Stats_Total_Psalms"     >0 / 0</td></tr>
+               <tr><td>Deuterocanonicals / Apocrypha</td> <td id="BQ_Stats_Total_Apocrypha"  >0 / 0</td></tr>
+               <tr><td></td><td></td></tr>
+               <tr><td>NEW TESTAMENT</td>                 <td id="BQ_Stats_Total_NT"         >0 / 0</td></tr>
+               <tr><td>Gospels</td>                       <td id="BQ_Stats_Total_Gospels"    >0 / 0</td></tr>
+               <tr><td>Acts and Pauline Writings</td>     <td id="BQ_Stats_Total_Acts"       >0 / 0</td></tr>
+               <tr><td>Rest of the New Testament</td>     <td id="BQ_Stats_Total_Rest"       >0 / 0</td></tr>
+            </tbody>
+         </table>
+      </div><!-- data-role: content -->
+
+      <div data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_Stats_secondary">
+               <li><a href="" class="noButtonBorder" data-rel="back" data-icon="back">Back</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+   </div><!-- data-role: page, id: BQ_Stats -->
+
+   <!-- ======================================================================================= -->
+
+   <div data-role="page" id="BQ_FirstTime">
+
+      <div data-role="header" data-position="fixed" data-id="nav" id="BQ_FirstTime_Title" data-theme="b">
+         <h1 id="BQ_FirstTime_app_name">Bible Quiz</h1>
+      </div><!-- data-role: header, id: title -->
+
+      <div id="BQ_FirstTime_PageContent" data-role="content">
+
+         <h2><img src="images/BQ-32.png" class="paddingRight" />Welcome to Bible Quiz!</h2>
+
+         <p>
+            Welcome to Bible Quiz, a fun way to grow in your knowledge of the
+            Bible&#8217;s contents. In order to play, this game needs to install
+            its database in your browser. The total size of the database
+            is approximately <span class="download_size"></span>. This may take
+            a few moments to download, depending on your connection speed.
+         </p>
+         <div class="centerAlign">
+            <button id="BQ_FirstTime_Install" type="button" class="ui-btn ui-shadow ui-corner-all ui-btn-icon-left ui-icon-check centerAlign" onclick="BQ.Database.Download()">Install</button>
+         </div>
+         <p>
+            Note: This website receives no personally identifiable
+		      information about you, nor does it track you in any way, nor
+		      does it display advertisements.
+         </p>
+
+         <form class="full-width-slider">
+            <label for="BQ_FirstTime_slider" class="ui-hidden-accessible">Slider:</label>
+            <input type="range" name="BQ_FirstTime_slider" id="BQ_FirstTime_slider" min="0" max="100" value="0" data-mini="true" data-highlight="true" disabled="disabled" />
+         </form>
+
+
+      </div><!-- data-role: content -->
+
+      <div data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
+         <div data-role="navbar">
+            <ul id="BQ_FirstTime_secondary">
+<!--
+               <li><a id="BQ_FirstTime_refresh_button" onclick="location.reload()" class="noButtonBorder ui-state-disabled" data-role="button" data-icon="refresh">Retry</a></li>
+ -->
+                <li><a href="#BQ_About" class="noButtonBorder" data-role="button" data-icon="info">More Info</a></li>
+            </ul>
+          </div><!-- data-role: navbar -->
+      </div><!-- data-role: footer -->
+
+      <div id="BQ_FirstTime_error_message" data-role="popup" data-overlay-theme="a" data-theme="a">
+         <div data-role="header" data-theme="a">
+            <h1>Error</h1>
+         </div>
+         <p class="redText paddingVertical">
+            Unable to download the Bible Quiz database.
+            Please make sure you are online, then try again.
+         </p>
+      </div>
+
+      <div id="BQ_FirstTime_CancelInstallation" data-role="popup" data-overlay-theme="a" data-theme="a">
+         <div data-role="header" data-theme="a">
+            <h1>Cancel</h1>
+         </div>
+         <p class="paddingVertical">Thank you for visiting Bible Quiz.</p>
+      </div>
+   </div><!-- data-role: page, id: BQ_FirstTime -->
+
+   <!-- ======================================================================================= -->
+
+</body>
+</html>
