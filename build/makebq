@@ -1,0 +1,195 @@
+#!/bin/bash
+
+#   **********************************************************
+#
+#   Processes files for use on Bible Quiz web site:
+#
+#   1. Makes a single JavaScript file for the BQ site
+#      from the various individual in-house JavaScript files
+#   2. Checks the validity of all PHP files, to check for potential 
+#      errors
+#   3. Compresses JavaScript and CSS files
+#
+#   This utility must be used to upload files to the Bible Quiz site.
+# 
+#   Pass the FTP username and password as parameters:
+#
+#	   $ makebq username password
+#
+#
+#   @author JJF (2/28/15)
+#
+#   **********************************************************
+
+########################
+# Set local variables for use in this batch file
+
+# Keep environment variables local to this batch files
+# setlocal
+
+HEZEKIAH316_UN=$1
+HEZEKIAH316_PW=$2
+
+
+
+HTMLFILES=pages/*.inc
+OUTFILE=BQ.js
+TEMPFILE="BQ.temp.js"
+ERRORFILE=BQ.err
+SITE=BibleQuiz
+VERSIONFILE=javascript/BQ.Version.js
+MANIFEST=BQ.manifest
+CSS_COMMON=BQ
+
+# JSL is the lint program for testing the validity of JavaScript files 
+# JS_LINT="jsl -conf ./tools/jsl.conf -nofilelisting -nologo -nosummary -process"
+JS_LINT="jshint --config tools/.jshintrc "
+JS_FILES=javascript/*.js
+
+# Look at Uglify JS 2 and Uglify CSS for minification
+
+
+PHP_LINT="php -l"
+PHP_FILES="BQ_ajax.php ../php_classes/*.php"
+
+
+
+
+# Create version number
+VERSION=`date +%Y.%m.%d.%H.%M.%S`
+
+echo Creating new BQ version $VERSION ...
+rm $VERSIONFILE
+echo -e "\n/* global BQ:true */\nBQ.sLibraryVersion=\"$VERSION\";\n/**/" >> $VERSIONFILE
+
+########################
+# Create single large HTML file from individual BQ files
+
+echo Removing old files ...
+rm -f index.html
+rm -f $MANIFEST
+rm -f $OUTFILE
+rm -f $ERRORFILE
+
+echo Copying pages into index.html ...
+cat $HTMLFILES > index.html
+
+########################
+# Create single large JavaScript file from individual BQ files
+
+echo Copying JavaScript files to $TEMPFILE ...
+cat $JS_FILES > $TEMPFILE
+
+# For live site, minify the file
+# choice /c yn /n /m "Compress JavaScript (y/n)? "
+MINIFY=false
+
+if [[ "$MINIFY" == "true" ]]; then
+
+   echo Minifying $TEMPFILE as $OUTFILE ...
+   # --verbose 
+   java -jar tools/yuicompressor.jar --preserve-semi --line-break 0 -o $OUTFILE $TEMPFILE 2> $ERRORFILE
+   java -jar tools/yuicompressor.jar --preserve-semi --line-break 0 -o jquery/jquery.idb.min.js jquery/jquery.idb.source.js 2> $ERRORFILE
+
+
+#   echo Minifying CSS files ...
+#   java -jar tools/yuicompressor.jar --line-break 0 -o $CSS_COMMON.css  $CSS_COMMON.source.css  2> $ERRORFILE
+   
+else
+
+   echo Copying $TEMPFILE to $OUTFILE ...
+   cat $TEMPFILE > $OUTFILE
+#   cp -f jquery/jquery.idb.source.js jquery/jquery.idb.min.js
+   
+   echo Copying CSS files ...
+   cat css/$CSS_COMMON.source.css > $CSS_COMMON.css
+
+
+fi
+
+# Delete temporary file
+rm -f $TEMPFILE
+
+echo Checking validity of JavaScript files ...
+for J in $(ls $JS_FILES); do
+
+   $JS_LINT $J >> $ERRORFILE
+
+done
+
+########################
+# Check validity of all PHP files
+
+echo Checking validity of PHP files ...
+for P in $(ls $PHP_FILES); do
+
+   $PHP_LINT $P | grep -v "No syntax errors detected" >> $ERRORFILE
+
+done
+
+########################
+# Create new manifest file
+
+echo Creating new manifest file 
+echo -e "CACHE MANIFEST\n#\n# Version $VERSION\n#" >> $TEMPFILE
+cat $TEMPFILE pages/$MANIFEST >> $MANIFEST
+rm -f $TEMPFILE
+
+
+########################
+# Display directory listing for new BQ*.* files
+
+ls -l BQ*.*
+ls -l index.html
+
+
+########################
+# display error file; delete it if it's empty
+if [[ ! -s "$ERRORFILE" ]]; then
+   rm -f BQ.err 
+elif [[ -e "$ERRORFILE" ]]; then
+   cat $ERRORFILE
+fi
+
+########################
+# Copy files to FTP server
+if [[ ! -e "$ERRORFILE" ]]; then
+
+   SERVER_SITE="ftp.hezekiah316.com"
+   
+   echo Copying files to FTP server on $SERVER_SITE
+
+   # -n option disables auto-logon
+   # -i option turns off interactive file transfers
+   # -v verbose, useful for debugging   
+
+
+   # mput images/*.png
+   # mput jquery/*
+   
+   ftp -n -i $SERVER_SITE <<End-Of-Session
+   
+   user $HEZEKIAH316_UN $HEZEKIAH316_PW
+   binary
+   cd /public_html/biblequiz
+   put index.html
+   mput BQ*.* 
+   mput jquery/*
+   dir BQ*.* 
+   dir index.html
+   dir -d jquery/*
+   cd /php_classes
+   mput ../php_classes/*.php
+   dir *.php   
+   bye
+
+End-Of-Session
+
+fi
+
+########################
+# Cleanup
+echo =====
+echo DONE!
+date
+# endlocal
