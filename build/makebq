@@ -12,45 +12,75 @@
 #
 #   This utility must be used to upload files to the Bible Quiz site.
 # 
-#   Pass the FTP username and password as parameters:
+#   Pass the FTP username (required) and password (required), and 
+#   whether to minify JavaScript and CSS files (optional) as parameters:
 #
-#	   $ makebq username password
+#	   $ makebq <FTP username> <FTP password> [--minify]
 #
 #
 #   @author JJF (2/28/15)
 #
 #   **********************************************************
 
+
+########################
+
+USAGE="Usage: $0 [--help] [--minify] <FTP username> <FTP password>"
+
+# username/password for FTP passed in as first two command line parameters
+SERVER_SITE=ftp.hezekiah316.com
+SERVER_UN=
+SERVER_PW=
+
+# Whether to use minified JavaScript/CSS passed in as the third command line parameter
+MINIFY="false"
+
+
+# Check input parameters
+while (( "$#" )); do
+
+   if [[ "$1" == "--help" ]]; then
+      echo "$USAGE"
+      exit 1
+   elif [[ "$1" == "--minify" ]]; then
+      MINIFY="true"
+   elif [[ "$SERVER_UN" == "" ]]; then
+      SERVER_UN=$1
+   elif [[ "$SERVER_PW" == "" ]]; then
+      SERVER_PW=$1
+   else
+      echo "Wrong number of parameters."
+      echo "$USAGE"
+      exit 1
+   fi
+   
+   shift
+   
+done
+
+
+
+
+
 ########################
 # Set local variables for use in this batch file
 
-# Keep environment variables local to this batch files
-# setlocal
 
-HEZEKIAH316_UN=$1
-HEZEKIAH316_PW=$2
+# Locations of subprojects
+BQ=../biblequiz
+DB=../bq_database
+PC=../php_classes
 
-
-
-HTMLFILES=pages/*.inc
-OUTFILE=BQ.js
+# Various files/groups of files
+ERRORFILE="./BQ.err"
+HTMLFILES="$BQ/pages/*.inc"
+JS_FILES="$BQ/javascript/*.js"
+MANIFEST="BQ.manifest"
+OUTFILE="$BQ/BQ.js"
+PHP_FILES="$BQ/BQ_ajax.php $PC/*.php"
 TEMPFILE="BQ.temp.js"
-ERRORFILE=BQ.err
-SITE=BibleQuiz
-VERSIONFILE=javascript/BQ.Version.js
-MANIFEST=BQ.manifest
-CSS_COMMON=BQ
+VERSIONFILE="$BQ/javascript/BQ.Version.js"
 
-# JSL is the lint program for testing the validity of JavaScript files 
-# JS_LINT="jsl -conf ./tools/jsl.conf -nofilelisting -nologo -nosummary -process"
-JS_LINT="jshint --config tools/.jshintrc "
-JS_FILES=javascript/*.js
-
-# Look at Uglify JS 2 and Uglify CSS for minification
-
-
-PHP_LINT="php -l"
-PHP_FILES="BQ_ajax.php ../php_classes/*.php"
 
 
 
@@ -66,56 +96,58 @@ echo -e "\n/* global BQ:true */\nBQ.sLibraryVersion=\"$VERSION\";\n/**/" >> $VER
 # Create single large HTML file from individual BQ files
 
 echo Removing old files ...
-rm -f index.html
-rm -f $MANIFEST
+rm -f $BQ/index.html
+rm -f $BQ/$MANIFEST
 rm -f $OUTFILE
 rm -f $ERRORFILE
 
 echo Copying pages into index.html ...
-cat $HTMLFILES > index.html
+cat $HTMLFILES > $BQ/index.html
 
 ########################
 # Create single large JavaScript file from individual BQ files
 
-echo Copying JavaScript files to $TEMPFILE ...
-cat $JS_FILES > $TEMPFILE
-
-# For live site, minify the file
-# choice /c yn /n /m "Compress JavaScript (y/n)? "
-MINIFY=false
-
-if [[ "$MINIFY" == "true" ]]; then
-
-   echo Minifying $TEMPFILE as $OUTFILE ...
-   # --verbose 
-   java -jar tools/yuicompressor.jar --preserve-semi --line-break 0 -o $OUTFILE $TEMPFILE 2> $ERRORFILE
-   java -jar tools/yuicompressor.jar --preserve-semi --line-break 0 -o jquery/jquery.idb.min.js jquery/jquery.idb.source.js 2> $ERRORFILE
-
-
-#   echo Minifying CSS files ...
-#   java -jar tools/yuicompressor.jar --line-break 0 -o $CSS_COMMON.css  $CSS_COMMON.source.css  2> $ERRORFILE
-   
-else
-
-   echo Copying $TEMPFILE to $OUTFILE ...
-   cat $TEMPFILE > $OUTFILE
-#   cp -f jquery/jquery.idb.source.js jquery/jquery.idb.min.js
-   
-   echo Copying CSS files ...
-   cat css/$CSS_COMMON.source.css > $CSS_COMMON.css
-
-
-fi
-
-# Delete temporary file
-rm -f $TEMPFILE
-
 echo Checking validity of JavaScript files ...
 for J in $(ls $JS_FILES); do
 
-   $JS_LINT $J >> $ERRORFILE
+   jshint --config jshintrc $J  >> $ERRORFILE
 
 done
+
+if [[ ! -s "$ERRORFILE" ]]; then
+   rm -f $ERRORFILE 
+fi
+
+if [[ ! -e "$ERRORFILE" ]]; then
+
+	echo Copying JavaScript files to $TEMPFILE ...
+	cat $JS_FILES > $TEMPFILE
+	
+	if [[ "$MINIFY" == "true" ]]; then
+	
+	   echo Minifying $TEMPFILE as $OUTFILE ...
+	   uglifyjs $TEMPFILE --compress --mangle --output $OUTFILE  2> $ERRORFILE
+	
+	
+	   echo Minifying CSS files ...
+	   uglifycss $BQ/css/BQ.source.css > $CSS_COMMON.css  2> $ERRORFILE
+	   
+	else
+	
+	   echo Copying $TEMPFILE to $OUTFILE ...
+	   cat $TEMPFILE > $OUTFILE
+	   
+	   echo Copying CSS files ...
+	   cat $BQ/css/BQ.source.css > $BQ/BQ.css
+	
+	
+	fi
+	
+	# Delete temporary file
+	rm -f $TEMPFILE
+	
+fi
+
 
 ########################
 # Check validity of all PHP files
@@ -123,40 +155,50 @@ done
 echo Checking validity of PHP files ...
 for P in $(ls $PHP_FILES); do
 
-   $PHP_LINT $P | grep -v "No syntax errors detected" >> $ERRORFILE
+   php -l $P | grep -v "No syntax errors detected" >> $ERRORFILE
 
 done
 
 ########################
 # Create new manifest file
 
-echo Creating new manifest file 
-echo -e "CACHE MANIFEST\n#\n# Version $VERSION\n#" >> $TEMPFILE
-cat $TEMPFILE pages/$MANIFEST >> $MANIFEST
-rm -f $TEMPFILE
+if [[ ! -s "$ERRORFILE" ]]; then
+   rm -f $ERRORFILE 
+fi
+if [[ ! -e "$ERRORFILE" ]]; then
 
+	echo Creating new manifest file 
+	echo -e "CACHE MANIFEST\n#\n# Version $VERSION\n#" >> $TEMPFILE
+	cat $TEMPFILE $BQ/pages/$MANIFEST >> $BQ/$MANIFEST
+	rm -f $TEMPFILE
+
+fi
 
 ########################
 # Display directory listing for new BQ*.* files
+if [[ ! -s "$ERRORFILE" ]]; then
+   rm -f $ERRORFILE 
+fi
+if [[ ! -e "$ERRORFILE" ]]; then
 
-ls -l BQ*.*
-ls -l index.html
+	ls -l $BQ/BQ*.*
+	ls -l $BQ/index.html
 
+fi
 
 ########################
 # display error file; delete it if it's empty
 if [[ ! -s "$ERRORFILE" ]]; then
-   rm -f BQ.err 
+   rm -f $ERRORFILE 
 elif [[ -e "$ERRORFILE" ]]; then
    cat $ERRORFILE
 fi
 
 ########################
 # Copy files to FTP server
-if [[ ! -e "$ERRORFILE" ]]; then
+if [[ !(-e "$ERRORFILE") && ("$SERVER_UN" != "") && ("$SERVER_PW" != "") ]]; then
 
-   SERVER_SITE="ftp.hezekiah316.com"
-   
+  
    echo Copying files to FTP server on $SERVER_SITE
 
    # -n option disables auto-logon
@@ -164,22 +206,24 @@ if [[ ! -e "$ERRORFILE" ]]; then
    # -v verbose, useful for debugging   
 
 
-   # mput images/*.png
-   # mput jquery/*
-   
    ftp -n -i $SERVER_SITE <<End-Of-Session
    
-   user $HEZEKIAH316_UN $HEZEKIAH316_PW
+   user $SERVER_UN $SERVER_PW
    binary
    cd /public_html/biblequiz
-   put index.html
-   mput BQ*.* 
-   mput jquery/*
+   put $BQ/index.html
+   mput $BQ/BQ*.* 
+   mput $BQ/images/*.png
+   mput $BQ/jquery/*.css
+   mput $BQ/jquery/*.js
+   mput $BQ/jquery/*.map
+   put  $BQ/jquery/images/ajax-loader.gif
+   mput $BQ/jquery/images/icons-png/*
+   mput $BQ/jquery/images/icons-svg/*
    dir BQ*.* 
    dir index.html
-   dir -d jquery/*
    cd /php_classes
-   mput ../php_classes/*.php
+   mput $PC/*.php
    dir *.php   
    bye
 
