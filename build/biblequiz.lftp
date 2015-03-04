@@ -1,0 +1,20 @@
+#echo Connecting to the Bible Quiz website at hezekiah316.com
+set ssl:verify-certificate no
+open hezekiah316.com
+
+#echo Copying Bible Quiz app
+mirror -R --no-recursion ../biblequiz/                /public_html/biblequiz
+mirror -R                ../biblequiz/images/         /public_html/biblequiz/images
+mirror -R                ../biblequiz/jquery/         /public_html/biblequiz/jquery
+
+#echo Copying PHP infrastructure
+mirror -R ../php_classes/  /php_classes/
+
+#echo Copying database app
+mirror -R --no-recursion --exclude=debug.log ../bq_database/        /public_html/bq_database
+mirror -R --no-recursion                     ../bq_database/images/ /public_html/bq_database/images
+
+#echo All done
+close
+
+exit 0

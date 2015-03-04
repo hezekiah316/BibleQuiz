@@ -12,11 +12,6 @@
 #
 #   This utility must be used to upload files to the Bible Quiz site.
 # 
-#   Pass the FTP username (required) and password (required), and 
-#   whether to minify JavaScript and CSS files (optional) as parameters:
-#
-#	   $ makebq <FTP username> <FTP password> [--minify]
-#
 #
 #   @author JJF (2/28/15)
 #
@@ -25,16 +20,14 @@
 
 ########################
 
-USAGE="Usage: $0 [--help] [--minify] <FTP username> <FTP password>"
+# Proper way to call this script:
+USAGE="Usage: $0 [--help] [--minify] [--upload]"
 
-# username/password for FTP passed in as first two command line parameters
-SERVER_SITE=ftp.hezekiah316.com
-SERVER_UN=
-SERVER_PW=
-
-# Whether to use minified JavaScript/CSS passed in as the third command line parameter
+# Whether to minify and obfuscate JavaScript/CSS
 MINIFY="false"
 
+#  Whether to upload files to hezekiah316.com
+UPLOAD="false"
 
 # Check input parameters
 while (( "$#" )); do
@@ -44,10 +37,8 @@ while (( "$#" )); do
       exit 1
    elif [[ "$1" == "--minify" ]]; then
       MINIFY="true"
-   elif [[ "$SERVER_UN" == "" ]]; then
-      SERVER_UN=$1
-   elif [[ "$SERVER_PW" == "" ]]; then
-      SERVER_PW=$1
+   elif [[ "$1" == "--upload" ]]; then
+      UPLOAD="true"
    else
       echo "Wrong number of parameters."
       echo "$USAGE"
@@ -67,9 +58,9 @@ done
 
 
 # Locations of subprojects
-BQ=../biblequiz
-DB=../bq_database
-PC=../php_classes
+BQ="../biblequiz"
+DB="../bq_database"
+PC="../php_classes"
 
 # Various files/groups of files
 ERRORFILE="./BQ.err"
@@ -176,6 +167,7 @@ fi
 
 ########################
 # Display directory listing for new BQ*.* files
+
 if [[ ! -s "$ERRORFILE" ]]; then
    rm -f $ERRORFILE 
 fi
@@ -188,6 +180,7 @@ fi
 
 ########################
 # display error file; delete it if it's empty
+
 if [[ ! -s "$ERRORFILE" ]]; then
    rm -f $ERRORFILE 
 elif [[ -e "$ERRORFILE" ]]; then
@@ -196,44 +189,21 @@ fi
 
 ########################
 # Copy files to FTP server
-if [[ !(-e "$ERRORFILE") && ("$SERVER_UN" != "") && ("$SERVER_PW" != "") ]]; then
+
+if [[ !(-e "$ERRORFILE") && ("$UPLOAD" == "true") ]]; then
 
   
-   echo Copying files to FTP server on $SERVER_SITE
-
-   # -n option disables auto-logon
-   # -i option turns off interactive file transfers
-   # -v verbose, useful for debugging   
-
-
-   ftp -n -i $SERVER_SITE <<End-Of-Session
-   
-   user $SERVER_UN $SERVER_PW
-   binary
-   cd /public_html/biblequiz
-   put $BQ/index.html
-   mput $BQ/BQ*.* 
-   mput $BQ/images/*.png
-   mput $BQ/jquery/*.css
-   mput $BQ/jquery/*.js
-   mput $BQ/jquery/*.map
-   put  $BQ/jquery/images/ajax-loader.gif
-   mput $BQ/jquery/images/icons-png/*
-   mput $BQ/jquery/images/icons-svg/*
-   dir BQ*.* 
-   dir index.html
-   cd /php_classes
-   mput $PC/*.php
-   dir *.php   
-   bye
-
-End-Of-Session
+   echo "Copying files to FTP server"
+   lftp -f biblequiz.lftp
 
 fi
 
 ########################
 # Cleanup
-echo =====
+
+echo ============================
 echo DONE!
 date
-# endlocal
+echo ============================
+exit 0
+
