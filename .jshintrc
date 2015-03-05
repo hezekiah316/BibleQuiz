@@ -1,0 +1,16 @@
+{
+   // http://jshint.com/docs/options/
+   // Enforcing:
+   "newcap": false,
+   "undef": true,
+   // "unused": false,
+   
+   // Relaxing:
+   "strict": true,
+   
+   // Environments:
+   "browser": true,
+   "devel": true,
+   "jquery": true
+   // "worker": true      
+}
