@@ -2,10 +2,10 @@
 /**
  * Main PHP script called via Ajax by BQ.
  */
-include_once "../../php_classes/BQ_library.php";
+include_once "{$_SERVER["DOCUMENT_ROOT"]}/../php_classes/BQ_library.php";
 
 try {
-	$Debug = new CDebug(true, __FILE__);
+	$Debug = new CDebug(false, __FILE__);
 
 	$Debug->PrintArray($_REQUEST, "REQUEST -> ");
 
@@ -29,6 +29,9 @@ try {
 $Debug->PrintArray($aData, "returning data ->");
 $sData = json_encode($aData);
 $Debug->Write($sData);
+
+$Debug->PrintArray($_SERVER, "SERVER -> ");
+
 
 echo $sData;
 return;

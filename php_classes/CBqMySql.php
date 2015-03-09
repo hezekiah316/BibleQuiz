@@ -164,11 +164,15 @@ class CBqMySql
 
    public function __construct()
    {
-  	   $ini_file = parse_ini_file("../.private/BQ.ini", true); 
+   	$Debug = new CDebug(false, "CBqMySql constructor");
+
+  	   $ini_file = parse_ini_file("{$_SERVER["DOCUMENT_ROOT"]}/../.private/BQ.ini", true);
       $this->_ksUsername = $ini_file["CBqMySql"]["username"];
       $this->_ksPassword = $ini_file["CBqMySql"]["password"];
       $this->_ksDatabase = $ini_file["CBqMySql"]["database"];
-	
+
+      $Debug->PrintArray($ini_file);
+
       $this->_Db = $this->OpenBqDatabase();
    } // constructor
 
@@ -571,7 +575,7 @@ EOT;
 
    private function UpdateVersion()
    {
-      $Debug = new CDebug(true, "UpdateVersion");
+      $Debug = new CDebug(false, "UpdateVersion");
 
       $query = "UPDATE {$this->_ksStats} SET created=created+1 WHERE field='BQ_database_version'";
       if ($stmt = $this->_Db->prepare($query)) { // assignment

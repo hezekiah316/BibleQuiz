@@ -6,14 +6,18 @@ class CSession
 
    function __construct()
    {
-   	  $ini_file = parse_ini_file("../.private/BQ.ini", true); 
-	  $this->_ks_BQ_Admin_Password = $ini_file["CSession"]["password"];
+   	$Debug = new CDebug(false, "CSession constructor");
+
+   	$ini_file = parse_ini_file("{$_SERVER["DOCUMENT_ROOT"]}/../.private/BQ.ini", true);
+	   $this->_ks_BQ_Admin_Password = $ini_file["CSession"]["password"];
+
+	   $Debug->PrintArray($ini_file);
 
       if (!isset($_SESSION[$this->_ks_BQ_Session])) {
          $_SESSION[$this->_ks_BQ_Session] = "";
       } // if
    } // constructor
-   
+
    public function Set($sPassword)
    {
       $bSuccess = false;
@@ -24,17 +28,17 @@ class CSession
       } // if
       return $bSuccess;
    } // Set
-   
+
    public function GetRequest()
    {
       return (isset($_REQUEST[$this->_ks_BQ_Session])) ? $_REQUEST[$this->_ks_BQ_Session] : "";
    } // GetRequest
-   
+
    public function Check()
    {
       return ($_SESSION[$this->_ks_BQ_Session] === sha1($this->_ks_BQ_Admin_Password));
    } // Check
-   
+
    public function Reset()
    {
       $_SESSION[$this->_ks_BQ_Session] = "";

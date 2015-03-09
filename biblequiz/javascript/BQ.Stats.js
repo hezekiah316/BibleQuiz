@@ -43,19 +43,19 @@ BQ.Stats = {};
       } catch(e) {
          oData = _koStatsDefaults;
       } finally {
-         oStats.iBible    = oData.B; // whole Bible
-         oStats.iOT       = oData.O; // Old Testament
-         oStats.iTorah    = oData.T; // Torah
-         oStats.iHistory  = oData.H; // History
-         oStats.iProphets = oData.P; // Prophets
-         oStats.iWritings = oData.W; // Writings
-         oStats.iDeutero  = oData.D; // Deuterocanonicals
-         oStats.iNT       = oData.N; // New Testament
-         oStats.iGospels  = oData.G; // Gospels
-         oStats.iActs     = oData.A; // Acts and Paul
-         oStats.iRestNT   = oData.R; // Rest of the NT
+         oStats.B = oData.B; // whole Bible
+         oStats.O = oData.O; // Old Testament
+         oStats.T = oData.T; // Torah
+         oStats.H = oData.H; // History
+         oStats.P = oData.P; // Prophets
+         oStats.W = oData.W; // Writings
+         oStats.D = oData.D; // Deuterocanonicals
+         oStats.N = oData.N; // New Testament
+         oStats.G = oData.G; // Gospels
+         oStats.A = oData.A; // Acts and Paul
+         oStats.R = oData.R; // Rest of the NT
       } // try
-      
+            
       return Object.freeze(oStats);
    } // Get
    

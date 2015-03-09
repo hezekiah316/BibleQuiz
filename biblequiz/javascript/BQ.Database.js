@@ -28,24 +28,6 @@ BQ.Database = (function namespace_Database()
     * 
     * Note: This is distinct from the version of the IndexedDB database.
     */
-/*
-   var DbVersion = function() {
-   }; // constructor
-   
-   // private
-   DbVersion._ksBqDbVersion = "BQ_DB_Version";
-
-   DbVersion.Get = function() {
-      return parseInt(window.localStorage.getItem(DbVersion._ksBqDbVersion), 10) || null;
-   }; // Get
-
-   DbVersion.Set = function(iNew) {
-      if (Number.isInteger(iNew) && iNew > 0) {
-         window.localStorage.setItem(DbVersion._ksBqDbVersion, iNew);
-      } // if
-      return;
-   }; // Set
-*/
    var DbVersion = Object.seal({
    
       // private
@@ -56,31 +38,15 @@ BQ.Database = (function namespace_Database()
       }, // get
    
       set current(iNew) {
-         if (Number.isInteger(iNew) && iNew > 0) {
+         if (Number.isInteger(iNew) && iNew > -1) { //0) { changed to -1 for testing only
             window.localStorage.setItem(this._ksBqDbVersion, iNew);
          } // if
          return;
       } // set
       
    }); // DbVersion
-/*
-   var DbSize = function(iSize) {
-   }; // constructor
 
-   // private
-   DbSize._ksBqDbSize = "BQ_DB_Size"; // localStorage entry with size of database
-   
-   DbSize.Get = function() {
-      return parseInt(window.localStorage.getItem(DbSize._ksBqDbSize), 10) || null;
-   }; // Get
 
-   DbSize.Set = function(iSize) {
-      if (Number.isInteger(iSize) && iSize > 0) {
-         window.localStorage.setItem(DbSize._ksBqDbSize, iSize);
-      } // if
-      return;
-   }; // Set
-*/
    var DbSize = Object.seal({
       
       // private
@@ -133,17 +99,17 @@ BQ.Database = (function namespace_Database()
    window.IDBKeyRange    = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
 
    var _koQuestionDefaults = Object.freeze({
-         id : 0, // always nonnegative
-         section : "", // one of "T", "H", "P", "W", "D", "G", "A", "R"
-         source : "",  // where the question came from
-         source_index : 0, // index in the source document (e.g. question number in Bible Content Quiz)
-         question : "",
-         answerA : "",
-         answerB : "",
-         answerC : "",
-         answerD : "",
-         correct : "", // one of "A", "B", "C", "D"
-         scripture : [] // an array of Scripture references (as JSON?)
+         id            : 0, // always nonnegative
+         section       : "", // one of "T", "H", "P", "W", "D", "G", "A", "R"
+         source        : "",  // where the question came from
+         source_index  : 0, // index in the source document (e.g. question number in Bible Content Quiz)
+         question      : "",
+         answerA       : "",
+         answerB       : "",
+         answerC       : "",
+         answerD       : "",
+         correct       : "", // one of "A", "B", "C", "D"
+         scripture     : [] // an array of Scripture references (as JSON?)
    }); // _koQuestionDefaults
 
 
@@ -186,27 +152,27 @@ BQ.Database = (function namespace_Database()
    function GetObjectStore(bWrite)
    {
       bWrite = !!bWrite;
-      var sMode = (bWrite) ? "readwrite" : "readonly";  
-      return _db.transaction(DB_info.store, sMode).objectStore(DB_info.store); 
+      var sMode = (bWrite) ? "readwrite" : "readonly";
+      var trans = _db.transaction(DB_info.store, sMode).objectStore(DB_info.store);
+      return trans; //.objectStore(DB_info.store);
    } // GetObjectStore
    
    function _SaveData(oOptions)
    {
       var idbObjectStore = GetObjectStore(true);
-      idbObjectStore.oncomplete = function(eEvent) {
 
-         // Add data to database
-         for (var i = 0; i < oOptions.oData.length; i++) {
-            idbObjectStore.delete(oOptions.oData[i].id).add(oOptions.oData[i]);
-         } // for   
-         
-         
-         // Save some statistics
-         BQ.Stats.Save(oOptions.oStatistics);
-         DbVersion.current = oOptions.iVersion;
+      // Add data to database
+      for (var i = 0; i < oOptions.oData.length; i++) {
+         idbObjectStore.delete(oOptions.oData[i].id);
+         idbObjectStore.add(oOptions.oData[i]);
+      } // for   
+      
+      
+      // Save some statistics
+      BQ.Stats.Save(oOptions.oStatistics);
+      DbVersion.current = oOptions.iVersion;
 
-      }; // oncomplete
-            
+      return;            
    } // _SaveData  
    
    /**
@@ -334,30 +300,34 @@ BQ.Database = (function namespace_Database()
    function GetNewVersion()
    {
       // For testing only: clear out database
-      window.indexedDB.deleteDatabase(DB_info.name);
-      DbVersion.current = 0;
-      
-      var iVersion = DbVersion.current;
+      // var idbDeleteRequest = window.indexedDB.deleteDatabase(DB_info.name);
+      // idbDeleteRequest.onsuccess = function(eEvent) { 
 
-      var oOptions = {
-            sFunction : "GetSize",
-            iCurrent  : iVersion
-      };
-      $.ajax({data: oOptions}).done(function(jsonData) {
-         var oData = JSON.parse(jsonData);
-         var iSize = DbSize.kbytes = oData.Version.iSize;
-         $(".download_size").text(iSize + "kb");
+         // DbVersion.current = 0;
          
-         if (iVersion === null) {
-            DisplayNoVersion();
-         } else {
-            Download();
-         } // if
-
-      }).fail(function() {
-         var iSize = DbSize.kbytes;
-         $(".download_size").text(iSize + "kb");
-      }); // ajax
+         var iVersion = DbVersion.current;
+   
+         var oOptions = {
+               sFunction : "GetSize",
+               iCurrent  : iVersion
+         };
+         $.ajax({data: oOptions}).done(function(jsonData) {
+            var oData = JSON.parse(jsonData);
+            var iSize = DbSize.kbytes = oData.Version.iSize;
+            $(".download_size").text(iSize + "kb");
+            
+            if (iVersion === null) {
+               DisplayNoVersion();
+            } else {
+               Download();
+            } // if
+   
+         }).fail(function() {
+            var iSize = DbSize.kbytes;
+            $(".download_size").text(iSize + "kb");
+         }); // ajax
+         
+      // }; // onsuccess
       return;
    } // GetNewVersion
 
@@ -409,15 +379,15 @@ BQ.Database = (function namespace_Database()
 
          var aoSection = [];
    
-         var idbObjectStore = GetObjectStore(false);
+         var idbObjectStore   = GetObjectStore(false);
+         var idbKeyRangeValue = window.IDBKeyRange.only(oOptions.section);
          
-         idbObjectStore.openCursor().onsuccess = function(eEvent) 
+         idbObjectStore.index(DB_info.index).openCursor(idbKeyRangeValue).onsuccess = function(eEvent) 
          {
             var idbCursor = eEvent.target.result;
             if (idbCursor) {
-               if (idbCursor.value.section === oOptions.section) {
-                  aoSection.push_back(idbCursor.value);
-               } // if
+               var oQuestion = idbCursor.value;
+               aoSection.push(idbCursor.value);
                idbCursor.continue();
             } else {
                // All done loading data; now process it

@@ -91,10 +91,10 @@ BQ.Game = {};
       this.questions  = [];
    }; // CSection constructor
 
-   CSection.prototype.CalculateNumberOfQuestions = function(iTotalDesired, iTotalQuestions)
+   CSection.prototype.CalculateNumberOfQuestions = function(iTotalAvailable, iTotalQuestions)
    {
       if (this.include) {
-         this.total = Math.min(Math.max(parseInt((iTotalQuestions * this.weight / iTotalDesired), 10), 1), this.available);
+         this.total = Math.min(Math.max(parseInt((iTotalQuestions * this.weight / iTotalAvailable), 10), 1), this.available);
       } else {
          this.total = 0;
       } // if
@@ -145,24 +145,15 @@ BQ.Game = {};
       this.iCurrentQuestion = -1;
       
       // Seal objects so they don't have properties added or removed by mistake
-      this.oTorah    = Object.seal(new CSection("Torah",    koWeights.iTorah,    oStats.iTorah));
-      this.oHistory  = Object.seal(new CSection("History",  koWeights.iHistory,  oStats.iHistory));
-      this.oWritings = Object.seal(new CSection("Writings", koWeights.iWritings, oStats.iWritings));
-      this.oProphets = Object.seal(new CSection("Prophets", koWeights.iProphets, oStats.iProphets));
-      this.oDeutero  = Object.seal(new CSection("Deutero",  koWeights.iDeutero,  oStats.iDeutero));
-      this.oGospels  = Object.seal(new CSection("Gospels",  koWeights.iGospels,  oStats.iGospels));
-      this.oActs     = Object.seal(new CSection("Acts",     koWeights.iActs,     oStats.iActs));
-      this.oRestNT   = Object.seal(new CSection("RestNT",   koWeights.iRestNT,   oStats.iRestNT));
+      this.oTorah    = Object.seal(new CSection("Torah",    koWeights.iTorah,    oStats.T));
+      this.oHistory  = Object.seal(new CSection("History",  koWeights.iHistory,  oStats.H));
+      this.oWritings = Object.seal(new CSection("Writings", koWeights.iWritings, oStats.W));
+      this.oProphets = Object.seal(new CSection("Prophets", koWeights.iProphets, oStats.P));
+      this.oDeutero  = Object.seal(new CSection("Deutero",  koWeights.iDeutero,  oStats.D));
+      this.oGospels  = Object.seal(new CSection("Gospels",  koWeights.iGospels,  oStats.G));
+      this.oActs     = Object.seal(new CSection("Acts",     koWeights.iActs,     oStats.A));
+      this.oRestNT   = Object.seal(new CSection("RestNT",   koWeights.iRestNT,   oStats.R));
       
-      // Object.seal(this.oTorah);
-      // Object.seal(this.oHistory);
-      // Object.seal(this.oWritings);
-      // Object.seal(this.oProphets);
-      // Object.seal(this.oDeutero);
-      // Object.seal(this.oGospels);
-      // Object.seal(this.oActs);
-      // Object.seal(this.oRestNT);
-
       
       // Get currently saved options
       this.bMode      = oSections.bMode;
@@ -170,26 +161,26 @@ BQ.Game = {};
       this.sBible     = oSections.sBible;
       
       // Calculate total weight
-      var iTotalDesired = 0;
-      iTotalDesired += this.oTorah.Include(   oSections.bTorah);
-      iTotalDesired += this.oHistory.Include( oSections.bHistory);
-      iTotalDesired += this.oWritings.Include(oSections.bWritings);
-      iTotalDesired += this.oProphets.Include(oSections.bProphets);
-      iTotalDesired += this.oDeutero.Include( oSections.bDeutero);
-      iTotalDesired += this.oGospels.Include( oSections.bGospels);
-      iTotalDesired += this.oActs.Include(    oSections.bActs);
-      iTotalDesired += this.oRestNT.Include(  oSections.bRestNT);
+      var iTotalAvailable = 0;
+      iTotalAvailable += this.oTorah.Include(   oSections.bTorah);
+      iTotalAvailable += this.oHistory.Include( oSections.bHistory);
+      iTotalAvailable += this.oWritings.Include(oSections.bWritings);
+      iTotalAvailable += this.oProphets.Include(oSections.bProphets);
+      iTotalAvailable += this.oDeutero.Include( oSections.bDeutero);
+      iTotalAvailable += this.oGospels.Include( oSections.bGospels);
+      iTotalAvailable += this.oActs.Include(    oSections.bActs);
+      iTotalAvailable += this.oRestNT.Include(  oSections.bRestNT);
 
       // Calculate number of questions for each area
       var iTotalQuestions = 0;
-      iTotalQuestions += this.oTorah.CalculateNumberOfQuestions(   iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oHistory.CalculateNumberOfQuestions( iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oWritings.CalculateNumberOfQuestions(iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oProphets.CalculateNumberOfQuestions(iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oDeutero.CalculateNumberOfQuestions( iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oGospels.CalculateNumberOfQuestions( iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oActs.CalculateNumberOfQuestions(    iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oRestNT.CalculateNumberOfQuestions(  iTotalDesired, this.iQuestions);
+      iTotalQuestions += this.oTorah.CalculateNumberOfQuestions(   iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oHistory.CalculateNumberOfQuestions( iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oWritings.CalculateNumberOfQuestions(iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oProphets.CalculateNumberOfQuestions(iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oDeutero.CalculateNumberOfQuestions( iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oGospels.CalculateNumberOfQuestions( iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oActs.CalculateNumberOfQuestions(    iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oRestNT.CalculateNumberOfQuestions(  iTotalAvailable, this.iQuestions);
 
       // Calculate arrays of question numbers
       var iRandom = this.iQuestions - iTotalQuestions;
@@ -216,14 +207,6 @@ BQ.Game = {};
       this.oGospels.LoadQuestions();
       this.oActs.LoadQuestions();
       this.oRestNT.LoadQuestions();
-      
-      var iIntervalId = setInterval(function() {
-         if (BQ.Database.IsLoaded()) {
-            clearInterval(iIntervalId);
-            this.aoQuiz = BQ.Database.GetQuestions();
-         } // if
-      }); // setInterval
-      
    }; // constructor
    
    CGame.prototype.NextQuestion = function()
@@ -245,6 +228,14 @@ BQ.Game = {};
       var oOptions = BQ.Options.Get();
       var oStats   = BQ.Stats.Get();
       ThisGame = new CGame(oOptions, oStats);
+      
+      var iIntervalId = setInterval(function() {
+         if (BQ.Database.IsLoaded()) {
+            clearInterval(iIntervalId);
+            ThisGame.aoQuiz = [].concat(BQ.Database.GetQuestions());
+         } // if
+      }); // setInterval
+      
       return;
    } // InitializeQuiz
    

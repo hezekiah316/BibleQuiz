@@ -111,7 +111,8 @@ BQ.AppCache = {};
    var _bDebugOn = true;
    
    var _cache = (window.hasOwnProperty("applicationCache")) ? window.applicationCache : null;
-
+   var _iIntervalId = null;
+   
    /**
     * Loads new cache files and reloads the page whenever a new version of the cache manifest 
     * is available on the server and the browser has finished updating the files in the 
@@ -170,7 +171,10 @@ BQ.AppCache = {};
     */
    function WebAppUpdateError(eEvent) 
    {  
-      alert("An error occurred while attempting to update the AppCache: " + eEvent.type);
+      alert("An error occurred while attempting to update the AppCache: " + eEvent.message);
+      clearInterval(_iIntervalId);
+      _cache.onerror       = null;
+      _cache.onupdateready = null;  
       return;
    } // WebAppUpdateError
 
@@ -197,7 +201,7 @@ BQ.AppCache = {};
       
          if (_bKeepChecking && _cache.status !== _cache.ERROR && _cache.status !== _cache.UPDATEREADY) {
             // check for a new cache every ten seconds in the testing environment, unless an error occurs
-            var iIntervalId = setInterval(function() {
+            _iIntervalId = setInterval(function() {
                try {
                   if (_cache.status !== _cache.DOWNLOADING) {
                      _cache.update();
@@ -206,7 +210,7 @@ BQ.AppCache = {};
                      } // if
                   } // if
                } catch (eError) {
-                  clearInterval(iIntervalId);
+                  clearInterval(_iIntervalId);
                   _cache.onerror       = null;
                   _cache.onupdateready = null;  
                } // try
@@ -257,24 +261,6 @@ BQ.Database = (function namespace_Database()
     * 
     * Note: This is distinct from the version of the IndexedDB database.
     */
-/*
-   var DbVersion = function() {
-   }; // constructor
-   
-   // private
-   DbVersion._ksBqDbVersion = "BQ_DB_Version";
-
-   DbVersion.Get = function() {
-      return parseInt(window.localStorage.getItem(DbVersion._ksBqDbVersion), 10) || null;
-   }; // Get
-
-   DbVersion.Set = function(iNew) {
-      if (Number.isInteger(iNew) && iNew > 0) {
-         window.localStorage.setItem(DbVersion._ksBqDbVersion, iNew);
-      } // if
-      return;
-   }; // Set
-*/
    var DbVersion = Object.seal({
    
       // private
@@ -285,31 +271,15 @@ BQ.Database = (function namespace_Database()
       }, // get
    
       set current(iNew) {
-         if (Number.isInteger(iNew) && iNew > 0) {
+         if (Number.isInteger(iNew) && iNew > -1) { //0) { changed to -1 for testing only
             window.localStorage.setItem(this._ksBqDbVersion, iNew);
          } // if
          return;
       } // set
       
    }); // DbVersion
-/*
-   var DbSize = function(iSize) {
-   }; // constructor
 
-   // private
-   DbSize._ksBqDbSize = "BQ_DB_Size"; // localStorage entry with size of database
-   
-   DbSize.Get = function() {
-      return parseInt(window.localStorage.getItem(DbSize._ksBqDbSize), 10) || null;
-   }; // Get
 
-   DbSize.Set = function(iSize) {
-      if (Number.isInteger(iSize) && iSize > 0) {
-         window.localStorage.setItem(DbSize._ksBqDbSize, iSize);
-      } // if
-      return;
-   }; // Set
-*/
    var DbSize = Object.seal({
       
       // private
@@ -362,17 +332,17 @@ BQ.Database = (function namespace_Database()
    window.IDBKeyRange    = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
 
    var _koQuestionDefaults = Object.freeze({
-         id : 0, // always nonnegative
-         section : "", // one of "T", "H", "P", "W", "D", "G", "A", "R"
-         source : "",  // where the question came from
-         source_index : 0, // index in the source document (e.g. question number in Bible Content Quiz)
-         question : "",
-         answerA : "",
-         answerB : "",
-         answerC : "",
-         answerD : "",
-         correct : "", // one of "A", "B", "C", "D"
-         scripture : [] // an array of Scripture references (as JSON?)
+         id            : 0, // always nonnegative
+         section       : "", // one of "T", "H", "P", "W", "D", "G", "A", "R"
+         source        : "",  // where the question came from
+         source_index  : 0, // index in the source document (e.g. question number in Bible Content Quiz)
+         question      : "",
+         answerA       : "",
+         answerB       : "",
+         answerC       : "",
+         answerD       : "",
+         correct       : "", // one of "A", "B", "C", "D"
+         scripture     : [] // an array of Scripture references (as JSON?)
    }); // _koQuestionDefaults
 
 
@@ -415,27 +385,27 @@ BQ.Database = (function namespace_Database()
    function GetObjectStore(bWrite)
    {
       bWrite = !!bWrite;
-      var sMode = (bWrite) ? "readwrite" : "readonly";  
-      return _db.transaction(DB_info.store, sMode).objectStore(DB_info.store); 
+      var sMode = (bWrite) ? "readwrite" : "readonly";
+      var trans = _db.transaction(DB_info.store, sMode).objectStore(DB_info.store);
+      return trans; //.objectStore(DB_info.store);
    } // GetObjectStore
    
    function _SaveData(oOptions)
    {
       var idbObjectStore = GetObjectStore(true);
-      idbObjectStore.oncomplete = function(eEvent) {
 
-         // Add data to database
-         for (var i = 0; i < oOptions.oData.length; i++) {
-            idbObjectStore.delete(oOptions.oData[i].id).add(oOptions.oData[i]);
-         } // for   
-         
-         
-         // Save some statistics
-         BQ.Stats.Save(oOptions.oStatistics);
-         DbVersion.current = oOptions.iVersion;
+      // Add data to database
+      for (var i = 0; i < oOptions.oData.length; i++) {
+         idbObjectStore.delete(oOptions.oData[i].id);
+         idbObjectStore.add(oOptions.oData[i]);
+      } // for   
+      
+      
+      // Save some statistics
+      BQ.Stats.Save(oOptions.oStatistics);
+      DbVersion.current = oOptions.iVersion;
 
-      }; // oncomplete
-            
+      return;            
    } // _SaveData  
    
    /**
@@ -563,30 +533,34 @@ BQ.Database = (function namespace_Database()
    function GetNewVersion()
    {
       // For testing only: clear out database
-      window.indexedDB.deleteDatabase(DB_info.name);
-      DbVersion.current = 0;
-      
-      var iVersion = DbVersion.current;
+      // var idbDeleteRequest = window.indexedDB.deleteDatabase(DB_info.name);
+      // idbDeleteRequest.onsuccess = function(eEvent) { 
 
-      var oOptions = {
-            sFunction : "GetSize",
-            iCurrent  : iVersion
-      };
-      $.ajax({data: oOptions}).done(function(jsonData) {
-         var oData = JSON.parse(jsonData);
-         var iSize = DbSize.kbytes = oData.Version.iSize;
-         $(".download_size").text(iSize + "kb");
+         // DbVersion.current = 0;
          
-         if (iVersion === null) {
-            DisplayNoVersion();
-         } else {
-            Download();
-         } // if
-
-      }).fail(function() {
-         var iSize = DbSize.kbytes;
-         $(".download_size").text(iSize + "kb");
-      }); // ajax
+         var iVersion = DbVersion.current;
+   
+         var oOptions = {
+               sFunction : "GetSize",
+               iCurrent  : iVersion
+         };
+         $.ajax({data: oOptions}).done(function(jsonData) {
+            var oData = JSON.parse(jsonData);
+            var iSize = DbSize.kbytes = oData.Version.iSize;
+            $(".download_size").text(iSize + "kb");
+            
+            if (iVersion === null) {
+               DisplayNoVersion();
+            } else {
+               Download();
+            } // if
+   
+         }).fail(function() {
+            var iSize = DbSize.kbytes;
+            $(".download_size").text(iSize + "kb");
+         }); // ajax
+         
+      // }; // onsuccess
       return;
    } // GetNewVersion
 
@@ -638,15 +612,15 @@ BQ.Database = (function namespace_Database()
 
          var aoSection = [];
    
-         var idbObjectStore = GetObjectStore(false);
+         var idbObjectStore   = GetObjectStore(false);
+         var idbKeyRangeValue = window.IDBKeyRange.only(oOptions.section);
          
-         idbObjectStore.openCursor().onsuccess = function(eEvent) 
+         idbObjectStore.index(DB_info.index).openCursor(idbKeyRangeValue).onsuccess = function(eEvent) 
          {
             var idbCursor = eEvent.target.result;
             if (idbCursor) {
-               if (idbCursor.value.section === oOptions.section) {
-                  aoSection.push_back(idbCursor.value);
-               } // if
+               var oQuestion = idbCursor.value;
+               aoSection.push(idbCursor.value);
                idbCursor.continue();
             } else {
                // All done loading data; now process it
@@ -911,10 +885,10 @@ BQ.Game = {};
       this.questions  = [];
    }; // CSection constructor
 
-   CSection.prototype.CalculateNumberOfQuestions = function(iTotalDesired, iTotalQuestions)
+   CSection.prototype.CalculateNumberOfQuestions = function(iTotalAvailable, iTotalQuestions)
    {
       if (this.include) {
-         this.total = Math.min(Math.max(parseInt((iTotalQuestions * this.weight / iTotalDesired), 10), 1), this.available);
+         this.total = Math.min(Math.max(parseInt((iTotalQuestions * this.weight / iTotalAvailable), 10), 1), this.available);
       } else {
          this.total = 0;
       } // if
@@ -965,24 +939,15 @@ BQ.Game = {};
       this.iCurrentQuestion = -1;
       
       // Seal objects so they don't have properties added or removed by mistake
-      this.oTorah    = Object.seal(new CSection("Torah",    koWeights.iTorah,    oStats.iTorah));
-      this.oHistory  = Object.seal(new CSection("History",  koWeights.iHistory,  oStats.iHistory));
-      this.oWritings = Object.seal(new CSection("Writings", koWeights.iWritings, oStats.iWritings));
-      this.oProphets = Object.seal(new CSection("Prophets", koWeights.iProphets, oStats.iProphets));
-      this.oDeutero  = Object.seal(new CSection("Deutero",  koWeights.iDeutero,  oStats.iDeutero));
-      this.oGospels  = Object.seal(new CSection("Gospels",  koWeights.iGospels,  oStats.iGospels));
-      this.oActs     = Object.seal(new CSection("Acts",     koWeights.iActs,     oStats.iActs));
-      this.oRestNT   = Object.seal(new CSection("RestNT",   koWeights.iRestNT,   oStats.iRestNT));
+      this.oTorah    = Object.seal(new CSection("Torah",    koWeights.iTorah,    oStats.T));
+      this.oHistory  = Object.seal(new CSection("History",  koWeights.iHistory,  oStats.H));
+      this.oWritings = Object.seal(new CSection("Writings", koWeights.iWritings, oStats.W));
+      this.oProphets = Object.seal(new CSection("Prophets", koWeights.iProphets, oStats.P));
+      this.oDeutero  = Object.seal(new CSection("Deutero",  koWeights.iDeutero,  oStats.D));
+      this.oGospels  = Object.seal(new CSection("Gospels",  koWeights.iGospels,  oStats.G));
+      this.oActs     = Object.seal(new CSection("Acts",     koWeights.iActs,     oStats.A));
+      this.oRestNT   = Object.seal(new CSection("RestNT",   koWeights.iRestNT,   oStats.R));
       
-      // Object.seal(this.oTorah);
-      // Object.seal(this.oHistory);
-      // Object.seal(this.oWritings);
-      // Object.seal(this.oProphets);
-      // Object.seal(this.oDeutero);
-      // Object.seal(this.oGospels);
-      // Object.seal(this.oActs);
-      // Object.seal(this.oRestNT);
-
       
       // Get currently saved options
       this.bMode      = oSections.bMode;
@@ -990,26 +955,26 @@ BQ.Game = {};
       this.sBible     = oSections.sBible;
       
       // Calculate total weight
-      var iTotalDesired = 0;
-      iTotalDesired += this.oTorah.Include(   oSections.bTorah);
-      iTotalDesired += this.oHistory.Include( oSections.bHistory);
-      iTotalDesired += this.oWritings.Include(oSections.bWritings);
-      iTotalDesired += this.oProphets.Include(oSections.bProphets);
-      iTotalDesired += this.oDeutero.Include( oSections.bDeutero);
-      iTotalDesired += this.oGospels.Include( oSections.bGospels);
-      iTotalDesired += this.oActs.Include(    oSections.bActs);
-      iTotalDesired += this.oRestNT.Include(  oSections.bRestNT);
+      var iTotalAvailable = 0;
+      iTotalAvailable += this.oTorah.Include(   oSections.bTorah);
+      iTotalAvailable += this.oHistory.Include( oSections.bHistory);
+      iTotalAvailable += this.oWritings.Include(oSections.bWritings);
+      iTotalAvailable += this.oProphets.Include(oSections.bProphets);
+      iTotalAvailable += this.oDeutero.Include( oSections.bDeutero);
+      iTotalAvailable += this.oGospels.Include( oSections.bGospels);
+      iTotalAvailable += this.oActs.Include(    oSections.bActs);
+      iTotalAvailable += this.oRestNT.Include(  oSections.bRestNT);
 
       // Calculate number of questions for each area
       var iTotalQuestions = 0;
-      iTotalQuestions += this.oTorah.CalculateNumberOfQuestions(   iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oHistory.CalculateNumberOfQuestions( iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oWritings.CalculateNumberOfQuestions(iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oProphets.CalculateNumberOfQuestions(iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oDeutero.CalculateNumberOfQuestions( iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oGospels.CalculateNumberOfQuestions( iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oActs.CalculateNumberOfQuestions(    iTotalDesired, this.iQuestions);
-      iTotalQuestions += this.oRestNT.CalculateNumberOfQuestions(  iTotalDesired, this.iQuestions);
+      iTotalQuestions += this.oTorah.CalculateNumberOfQuestions(   iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oHistory.CalculateNumberOfQuestions( iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oWritings.CalculateNumberOfQuestions(iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oProphets.CalculateNumberOfQuestions(iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oDeutero.CalculateNumberOfQuestions( iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oGospels.CalculateNumberOfQuestions( iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oActs.CalculateNumberOfQuestions(    iTotalAvailable, this.iQuestions);
+      iTotalQuestions += this.oRestNT.CalculateNumberOfQuestions(  iTotalAvailable, this.iQuestions);
 
       // Calculate arrays of question numbers
       var iRandom = this.iQuestions - iTotalQuestions;
@@ -1036,14 +1001,6 @@ BQ.Game = {};
       this.oGospels.LoadQuestions();
       this.oActs.LoadQuestions();
       this.oRestNT.LoadQuestions();
-      
-      var iIntervalId = setInterval(function() {
-         if (BQ.Database.IsLoaded()) {
-            clearInterval(iIntervalId);
-            this.aoQuiz = BQ.Database.GetQuestions();
-         } // if
-      }); // setInterval
-      
    }; // constructor
    
    CGame.prototype.NextQuestion = function()
@@ -1065,6 +1022,14 @@ BQ.Game = {};
       var oOptions = BQ.Options.Get();
       var oStats   = BQ.Stats.Get();
       ThisGame = new CGame(oOptions, oStats);
+      
+      var iIntervalId = setInterval(function() {
+         if (BQ.Database.IsLoaded()) {
+            clearInterval(iIntervalId);
+            ThisGame.aoQuiz = [].concat(BQ.Database.GetQuestions());
+         } // if
+      }); // setInterval
+      
       return;
    } // InitializeQuiz
    
@@ -1276,19 +1241,19 @@ BQ.Stats = {};
       } catch(e) {
          oData = _koStatsDefaults;
       } finally {
-         oStats.iBible    = oData.B; // whole Bible
-         oStats.iOT       = oData.O; // Old Testament
-         oStats.iTorah    = oData.T; // Torah
-         oStats.iHistory  = oData.H; // History
-         oStats.iProphets = oData.P; // Prophets
-         oStats.iWritings = oData.W; // Writings
-         oStats.iDeutero  = oData.D; // Deuterocanonicals
-         oStats.iNT       = oData.N; // New Testament
-         oStats.iGospels  = oData.G; // Gospels
-         oStats.iActs     = oData.A; // Acts and Paul
-         oStats.iRestNT   = oData.R; // Rest of the NT
+         oStats.B = oData.B; // whole Bible
+         oStats.O = oData.O; // Old Testament
+         oStats.T = oData.T; // Torah
+         oStats.H = oData.H; // History
+         oStats.P = oData.P; // Prophets
+         oStats.W = oData.W; // Writings
+         oStats.D = oData.D; // Deuterocanonicals
+         oStats.N = oData.N; // New Testament
+         oStats.G = oData.G; // Gospels
+         oStats.A = oData.A; // Acts and Paul
+         oStats.R = oData.R; // Rest of the NT
       } // try
-      
+            
       return Object.freeze(oStats);
    } // Get
    
@@ -1386,5 +1351,5 @@ BQ.Stats = {};
 /**/
 
 /* global BQ:true */
-BQ.sLibraryVersion="2015.02.28.19.43.15";
+BQ.sLibraryVersion="2015.03.09.20.37.27";
 /**/

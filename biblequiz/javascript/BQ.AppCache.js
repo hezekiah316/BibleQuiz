@@ -23,7 +23,8 @@ BQ.AppCache = {};
    var _bDebugOn = true;
    
    var _cache = (window.hasOwnProperty("applicationCache")) ? window.applicationCache : null;
-
+   var _iIntervalId = null;
+   
    /**
     * Loads new cache files and reloads the page whenever a new version of the cache manifest 
     * is available on the server and the browser has finished updating the files in the 
@@ -82,7 +83,10 @@ BQ.AppCache = {};
     */
    function WebAppUpdateError(eEvent) 
    {  
-      alert("An error occurred while attempting to update the AppCache: " + eEvent.type);
+      alert("An error occurred while attempting to update the AppCache: " + eEvent.message);
+      clearInterval(_iIntervalId);
+      _cache.onerror       = null;
+      _cache.onupdateready = null;  
       return;
    } // WebAppUpdateError
 
@@ -109,7 +113,7 @@ BQ.AppCache = {};
       
          if (_bKeepChecking && _cache.status !== _cache.ERROR && _cache.status !== _cache.UPDATEREADY) {
             // check for a new cache every ten seconds in the testing environment, unless an error occurs
-            var iIntervalId = setInterval(function() {
+            _iIntervalId = setInterval(function() {
                try {
                   if (_cache.status !== _cache.DOWNLOADING) {
                      _cache.update();
@@ -118,7 +122,7 @@ BQ.AppCache = {};
                      } // if
                   } // if
                } catch (eError) {
-                  clearInterval(iIntervalId);
+                  clearInterval(_iIntervalId);
                   _cache.onerror       = null;
                   _cache.onupdateready = null;  
                } // try
