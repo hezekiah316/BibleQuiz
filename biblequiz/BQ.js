@@ -760,6 +760,7 @@ BQ.Events = {};
          case "BQ_Start_Config"       : BQ.Options.Display();              break;
          case "BQ_Config_Questions"   : oOptions.Questions(eThis.value);   break;
          case "BQ_Config_Mode"        : oOptions.Mode(eThis.value);        break;
+         case "BQ_Config_Time"        : oOptions.Time(eThis.value);        break;
          case "BQ_Config_Torah"       : oOptions.Torah(eThis.checked);     break;
          case "BQ_Config_History"     : oOptions.History(eThis.checked);   break;
          case "BQ_Config_Prophets"    : oOptions.Prophets(eThis.checked);  break;
@@ -1077,6 +1078,7 @@ BQ.Options = {};
                    // n.b. Study mode only includes questions from the PCUSA 
                    // ordination exams and, by definition, no questions from the
                    // Deuterocanonicals / Apocrypha.
+         L : 30,   // time (in seconds) in which to answer a question (15 <= t <= 120) [L -> length of time]
          Q : 100,  // number of questions to include
          T : true, // Torah
          H : true, // Historical Books
@@ -1097,6 +1099,7 @@ BQ.Options = {};
       // public members
       this.bMode      = oOptions.M;
       this.iQuestions = oOptions.Q;
+      this.iTime      = oOptions.L;
       this.bTorah     = oOptions.T;
       this.bHistory   = oOptions.H;
       this.bProphets  = oOptions.P;
@@ -1130,12 +1133,19 @@ BQ.Options = {};
       this.iQuestions = iQuestions;
       this._Save();
    }; 
+   Options.prototype.Time = function(sTime) {
+      var iTime  = parseInt(sTime, 10);
+      iTime = Math.min(Math.max(iTime, 15), 120); // keep iTime in the range [15, 120]
+      this.iTime = iTime;
+      this._Save();
+   }; 
    
    // private method
    Options.prototype._Save = function()
    {
       var oOptions = {
             M : this.bMode,
+            L : this.iTime,
             Q : this.iQuestions,
             T : this.bTorah,
             H : this.bHistory,
@@ -1165,10 +1175,11 @@ BQ.Options = {};
    {
       var oOptions = new Options();
       
-//      $("#BQ_Config_Questions").val(oOptions.iQuestions);
       $("body").one("pagecontainerchange", function(eEvent) {
          $("#BQ_Config_Questions").val(oOptions.iQuestions);
          $("#BQ_Config_Questions").slider().slider("refresh");
+         $("#BQ_Config_Time").val(oOptions.iTime);
+         $("#BQ_Config_Time").slider().slider("refresh");
       }); // pagecontainerchange
 
       $("#BQ_Config_Mode").val(((oOptions.bMode) ? "quiz" : "study"));
@@ -1351,5 +1362,5 @@ BQ.Stats = {};
 /**/
 
 /* global BQ:true */
-BQ.sLibraryVersion="2015.03.09.20.37.27";
+BQ.sLibraryVersion="2015.03.09.21.01.03";
 /**/

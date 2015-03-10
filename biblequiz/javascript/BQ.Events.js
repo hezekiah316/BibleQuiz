@@ -41,6 +41,7 @@ BQ.Events = {};
          case "BQ_Start_Config"       : BQ.Options.Display();              break;
          case "BQ_Config_Questions"   : oOptions.Questions(eThis.value);   break;
          case "BQ_Config_Mode"        : oOptions.Mode(eThis.value);        break;
+         case "BQ_Config_Time"        : oOptions.Time(eThis.value);        break;
          case "BQ_Config_Torah"       : oOptions.Torah(eThis.checked);     break;
          case "BQ_Config_History"     : oOptions.History(eThis.checked);   break;
          case "BQ_Config_Prophets"    : oOptions.Prophets(eThis.checked);  break;

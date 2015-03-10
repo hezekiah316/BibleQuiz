@@ -18,6 +18,9 @@
                <option value="study">Study</option>
             </select>
 
+            <label for="BQ_Config_Time"><h2>Max Time per Question</h2></label>
+            <input name="BQ_Config_Time" id="BQ_Config_Time" type="range" min="15" max="120" step="5" value="30"  data-highlight="true" data-theme="a" />
+
             <h2>Sections to Include</h2>
             <div class="ui-grid-a">
                 <div class="ui-block-a">
