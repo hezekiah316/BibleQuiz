@@ -83,7 +83,7 @@ BQ.AppCache = {};
     */
    function WebAppUpdateError(eEvent) 
    {  
-      alert("An error occurred while attempting to update the AppCache: " + eEvent.message);
+      // alert("An error occurred while attempting to update the AppCache: " + eEvent.message);
       clearInterval(_iIntervalId);
       _cache.onerror       = null;
       _cache.onupdateready = null;  

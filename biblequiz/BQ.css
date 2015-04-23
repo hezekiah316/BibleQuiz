@@ -106,12 +106,37 @@
    top: -10000px;
    width: 0;
 }
-
+.runningOutOfTime {
+   background-color: yellow !important;
+   color: black !important;
+   font-weight: 300 !important;
+}
+.nearlyOutOfTime {
+   background-color: orange !important;
+   color: black !important;
+   font-weight: 300 !important;
+}
+.incorrectAnswer {
+   background-color: red !important;
+   color: black !important;
+   font-weight: 300 !important;
+}
+.correctAnswer {
+   background-color: green !important;
+   color: black !important;
+   font-weight: 300 !important;
+}
+.highlightCorrectAnswer {
+   background-color: yellow !important;
+}
 /**
  *    Styles for individual elements
  */
 caption {
    font-weight: bold;
+}
+#BQ_Game_MoreInfoDialog {
+   min-width: 300px;
 }
 /**
  *    Styles for overwriting jquery.mobile styles

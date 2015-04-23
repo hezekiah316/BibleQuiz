@@ -7,30 +7,42 @@
 
       <div id="BQ_Game_PageContent" data-role="content">
 
-         <fieldset data-role="controlgroup">
+         <fieldset id="BQ_Game_ControlGroup" data-role="controlgroup">
          
-	         <legend class="question">In the book of Deuteronomy, which statement follows "Hear, O Israel: The <span class='tetragrammaton'>Lord</span> is our God, the <span class='tetragrammaton'>Lord</span> alone."</legend>
+	         <legend id="BQ_Game_question" class="blueText"></legend>
 	
-	         <input type="radio" name="answer" id="answerA" value="A" data-theme="a" />
-	         <label for="answerA">You shall have no other gods before me.</label>
+	         <input type="radio" name="answer" id="BQ_Game_answerA" value="A" data-theme="a" />
+	         <label for="BQ_Game_answerA"></label>
 
-	         <input type="radio" name="answer" id="answerB" value="B" data-theme="a" />
-	         <label for="answerB">You shall love the <span class='tetragrammaton'>Lord</span> your God with all your heart, and with all your soul, and with all your might."</label>
+	         <input type="radio" name="answer" id="BQ_Game_answerB" value="B" data-theme="a" />
+	         <label for="BQ_Game_answerB"></label>
 	
-            <input type="radio" name="answer" id="answerC" value="C" data-theme="a" />
-	         <label for="answerC">You shall remember all the ways which the <span class='tetragrammaton'>Lord</span> your God has led you.</label>
+            <input type="radio" name="answer" id="BQ_Game_answerC" value="C" data-theme="a" />
+	         <label for="BQ_Game_answerC"></label>
 	            
-            <input type="radio" name="answer" id="answerD" value="D" data-theme="a" />
-	         <label for="answerD">You shall not put the <span class='tetragrammaton'>Lord</span> your God to the test.</label>
+            <input type="radio" name="answer" id="BQ_Game_answerD" value="D" data-theme="a" />
+	         <label for="BQ_Game_answerD"></label>
 
          </fieldset>
+         <br />
+         <br />
+         <div id="BQ_Game_MoreInfoDiv" data-role="collapsible" data-theme="a" data-content-theme="a" data-mini="true" class="keepHidden">
+            <h2>More Info</h2>
+            <p>Scripture:</p>
+            <ul id="BQ_Game_BibleRefs">
+            </ul>
+            <p class="smallText">BQ Question #<span id="BQ_Game_DbIndex"></span></p>
+            <p class="smallText">Source: <span id="BQ_Game_Source"></span></p>
+            <input type="hidden" id="BQ_Game_correctAnswer" value="" />
+         </div>
+
       </div><!-- data-role: content -->
 
       <div id="BQ_footer" data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
          <div data-role="navbar">
             <ul id="BQ_Game_secondary">
-               <li><a>23 seconds ...<br/>Final Answer</a></li>
-               <li><a href="#BQ_Pause" data-icon="clock">Pause</a></li>
+               <li><a id="BQ_Game_FinalAnswer" data-icon="check">Final Answer</a></li>
+               <li><a id="BQ_Game_PauseGame" href="#BQ_Pause" data-icon="clock">Pause</a></li>
             </ul>
           </div><!-- data-role: navbar -->
       </div><!-- data-role: footer -->

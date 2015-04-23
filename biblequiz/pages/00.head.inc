@@ -31,7 +31,7 @@
    <script type="text/javascript" src="BQ.js"></script>
 
    <!-- Icons for the user's home screen -->
-   <link rel="shortcut icon" sizes="196x196" href="images/BQ-196.png">
+   <link rel="icon" sizes="196x196" href="images/BQ-196.png">
    <link rel="apple-touch-icon" sizes="128x128" href="images/BQ-128.png" />
    <meta name="msapplication-TileImage" content="images/BQ-300.png"/>
 

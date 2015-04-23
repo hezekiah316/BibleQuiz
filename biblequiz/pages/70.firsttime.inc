@@ -7,7 +7,7 @@
 
       <div id="BQ_FirstTime_PageContent" data-role="content">
 
-         <h2><img src="images/BQ-32.png" class="paddingRight" />Welcome to Bible Quiz!</h2>
+         <h2><img src="images/BQ-32.png" class="paddingRight" alt="Bible Quiz logo" />Welcome to Bible Quiz!</h2>
 
          <p>
             Welcome to Bible Quiz, a fun way to grow in your knowledge of the

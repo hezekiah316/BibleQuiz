@@ -112,7 +112,7 @@
             </div>
 
             <div data-role="collapsible" data-theme="a" data-inset="false">
-               <h2>Feeback</h2>
+               <h2>Feedback</h2>
                <p>Your feedback is important! Feedback, corrections, questions, comments?
                   Send e-mail to <a href="mailto:developer@hezekiah316.com">Jeff</a>.</p>
             </div>

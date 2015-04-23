@@ -27,8 +27,8 @@
       <div id="BQ_Pause_Footer" data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
          <div data-role="navbar">
             <ul id="BQ_Pause_secondary">
-               <li><a href="#BQ_Game" data-role="button" data-icon="check">Resume Play</a></li>
-               <li><a href="#BQ_Start" data-role="button" data-icon="home">Quit Game</a></li>
+               <li><a id="BQ_Pause_ResumeGame" href="#BQ_Game"  data-role="button" data-icon="check">Resume Play</a></li>
+               <li><a id="BQ_Pause_QuitGame"   href="#BQ_Start" data-role="button" data-icon="home">Quit Game</a></li>
             </ul>
           </div><!-- data-role: navbar -->
       </div><!-- data-role: footer -->

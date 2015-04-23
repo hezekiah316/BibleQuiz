@@ -9,19 +9,19 @@
 
          <form name="BQ_Config_Form">
 
-            <label for="BQ_Config_Questions"><h2>Questions to Include</h2></label>
+            <label for="BQ_Config_Questions" class="blueText emphaticText">Questions to Include</label>
             <input name="BQ_Config_Questions" id="BQ_Config_Questions" type="range" min="10" max="100" value="100"  data-highlight="true" data-theme="a" />
 
-            <label for="BQ_Config_Mode"><h2>Game Mode</h2></label>
+            <label for="BQ_Config_Mode" class="blueText emphaticText">Game Mode</label>
             <select name="BQ_Config_Mode" id="BQ_Config_Mode" data-role="slider" data-track-theme="a" data-theme="a">
                <option value="quiz" selected>Quiz</option>
                <option value="study">Study</option>
             </select>
 
-            <label for="BQ_Config_Time"><h2>Max Time per Question</h2></label>
+            <label for="BQ_Config_Time" class="blueText emphaticText">Time per Question (study mode only)</label>
             <input name="BQ_Config_Time" id="BQ_Config_Time" type="range" min="15" max="120" step="5" value="30"  data-highlight="true" data-theme="a" />
 
-            <h2>Sections to Include</h2>
+            <p class="blueText emphaticText">Sections to Include</p>
             <div class="ui-grid-a">
                 <div class="ui-block-a">
                    <fieldset data-role="controlgroup">
@@ -52,7 +52,7 @@
             </div><!-- grid-a -->
 
 <!--
-            <label for="BQ_Config_Bible"><h2>Preferred Bible translation</h2></label>
+            <label for="BQ_Config_Bible" class="blueText emphaticText">Preferred Bible translation</label>
             <input type="text" name="BQ_Config_Bible" id="BQ_Config_Bible" value="NRSV" readonly />
  -->
 

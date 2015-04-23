@@ -31,7 +31,7 @@
    <script type="text/javascript" src="BQ.js"></script>
 
    <!-- Icons for the user's home screen -->
-   <link rel="shortcut icon" sizes="196x196" href="images/BQ-196.png">
+   <link rel="icon" sizes="196x196" href="images/BQ-196.png">
    <link rel="apple-touch-icon" sizes="128x128" href="images/BQ-128.png" />
    <meta name="msapplication-TileImage" content="images/BQ-300.png"/>
 
@@ -81,19 +81,19 @@
 
          <form name="BQ_Config_Form">
 
-            <label for="BQ_Config_Questions"><h2>Questions to Include</h2></label>
+            <label for="BQ_Config_Questions" class="blueText emphaticText">Questions to Include</label>
             <input name="BQ_Config_Questions" id="BQ_Config_Questions" type="range" min="10" max="100" value="100"  data-highlight="true" data-theme="a" />
 
-            <label for="BQ_Config_Mode"><h2>Game Mode</h2></label>
+            <label for="BQ_Config_Mode" class="blueText emphaticText">Game Mode</label>
             <select name="BQ_Config_Mode" id="BQ_Config_Mode" data-role="slider" data-track-theme="a" data-theme="a">
                <option value="quiz" selected>Quiz</option>
                <option value="study">Study</option>
             </select>
 
-            <label for="BQ_Config_Time"><h2>Max Time per Question</h2></label>
+            <label for="BQ_Config_Time" class="blueText emphaticText">Time per Question (study mode only)</label>
             <input name="BQ_Config_Time" id="BQ_Config_Time" type="range" min="15" max="120" step="5" value="30"  data-highlight="true" data-theme="a" />
 
-            <h2>Sections to Include</h2>
+            <p class="blueText emphaticText">Sections to Include</p>
             <div class="ui-grid-a">
                 <div class="ui-block-a">
                    <fieldset data-role="controlgroup">
@@ -124,7 +124,7 @@
             </div><!-- grid-a -->
 
 <!--
-            <label for="BQ_Config_Bible"><h2>Preferred Bible translation</h2></label>
+            <label for="BQ_Config_Bible" class="blueText emphaticText">Preferred Bible translation</label>
             <input type="text" name="BQ_Config_Bible" id="BQ_Config_Bible" value="NRSV" readonly />
  -->
 
@@ -151,30 +151,42 @@
 
       <div id="BQ_Game_PageContent" data-role="content">
 
-         <fieldset data-role="controlgroup">
+         <fieldset id="BQ_Game_ControlGroup" data-role="controlgroup">
          
-	         <legend class="question">In the book of Deuteronomy, which statement follows "Hear, O Israel: The <span class='tetragrammaton'>Lord</span> is our God, the <span class='tetragrammaton'>Lord</span> alone."</legend>
+	         <legend id="BQ_Game_question" class="blueText"></legend>
 	
-	         <input type="radio" name="answer" id="answerA" value="A" data-theme="a" />
-	         <label for="answerA">You shall have no other gods before me.</label>
+	         <input type="radio" name="answer" id="BQ_Game_answerA" value="A" data-theme="a" />
+	         <label for="BQ_Game_answerA"></label>
 
-	         <input type="radio" name="answer" id="answerB" value="B" data-theme="a" />
-	         <label for="answerB">You shall love the <span class='tetragrammaton'>Lord</span> your God with all your heart, and with all your soul, and with all your might."</label>
+	         <input type="radio" name="answer" id="BQ_Game_answerB" value="B" data-theme="a" />
+	         <label for="BQ_Game_answerB"></label>
 	
-            <input type="radio" name="answer" id="answerC" value="C" data-theme="a" />
-	         <label for="answerC">You shall remember all the ways which the <span class='tetragrammaton'>Lord</span> your God has led you.</label>
+            <input type="radio" name="answer" id="BQ_Game_answerC" value="C" data-theme="a" />
+	         <label for="BQ_Game_answerC"></label>
 	            
-            <input type="radio" name="answer" id="answerD" value="D" data-theme="a" />
-	         <label for="answerD">You shall not put the <span class='tetragrammaton'>Lord</span> your God to the test.</label>
+            <input type="radio" name="answer" id="BQ_Game_answerD" value="D" data-theme="a" />
+	         <label for="BQ_Game_answerD"></label>
 
          </fieldset>
+         <br />
+         <br />
+         <div id="BQ_Game_MoreInfoDiv" data-role="collapsible" data-theme="a" data-content-theme="a" data-mini="true" class="keepHidden">
+            <h2>More Info</h2>
+            <p>Scripture:</p>
+            <ul id="BQ_Game_BibleRefs">
+            </ul>
+            <p class="smallText">BQ Question #<span id="BQ_Game_DbIndex"></span></p>
+            <p class="smallText">Source: <span id="BQ_Game_Source"></span></p>
+            <input type="hidden" id="BQ_Game_correctAnswer" value="" />
+         </div>
+
       </div><!-- data-role: content -->
 
       <div id="BQ_footer" data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
          <div data-role="navbar">
             <ul id="BQ_Game_secondary">
-               <li><a>23 seconds ...<br/>Final Answer</a></li>
-               <li><a href="#BQ_Pause" data-icon="clock">Pause</a></li>
+               <li><a id="BQ_Game_FinalAnswer" data-icon="check">Final Answer</a></li>
+               <li><a id="BQ_Game_PauseGame" href="#BQ_Pause" data-icon="clock">Pause</a></li>
             </ul>
           </div><!-- data-role: navbar -->
       </div><!-- data-role: footer -->
@@ -211,8 +223,8 @@
       <div id="BQ_Pause_Footer" data-role="footer" data-position="fixed" data-id="nav" data-theme="b">
          <div data-role="navbar">
             <ul id="BQ_Pause_secondary">
-               <li><a href="#BQ_Game" data-role="button" data-icon="check">Resume Play</a></li>
-               <li><a href="#BQ_Start" data-role="button" data-icon="home">Quit Game</a></li>
+               <li><a id="BQ_Pause_ResumeGame" href="#BQ_Game"  data-role="button" data-icon="check">Resume Play</a></li>
+               <li><a id="BQ_Pause_QuitGame"   href="#BQ_Start" data-role="button" data-icon="home">Quit Game</a></li>
             </ul>
           </div><!-- data-role: navbar -->
       </div><!-- data-role: footer -->
@@ -380,7 +392,7 @@
             </div>
 
             <div data-role="collapsible" data-theme="a" data-inset="false">
-               <h2>Feeback</h2>
+               <h2>Feedback</h2>
                <p>Your feedback is important! Feedback, corrections, questions, comments?
                   Send e-mail to <a href="mailto:developer@hezekiah316.com">Jeff</a>.</p>
             </div>
@@ -447,7 +459,7 @@
                <tr><th>Section</th><th>Right / Wrong</th></tr>
             </thead>
             <tbody>
-               <tr><td>WHOLE BIBLE</td>                   <td id="BQ_Stats_Total_Bible  "    >0 / 0</td></tr>
+               <tr><td>WHOLE BIBLE</td>                   <td id="BQ_Stats_Total_Bible"      >0 / 0</td></tr>
                <tr><td></td><td></td></tr>
                <tr><td>OLD TESTAMENT</td>                 <td id="BQ_Stats_Total_OT"         >0 / 0</td></tr>
                <tr><td>Pentateuch</td>                    <td id="BQ_Stats_Total_Pentateuch" >0 / 0</td></tr>
@@ -484,7 +496,7 @@
 
       <div id="BQ_FirstTime_PageContent" data-role="content">
 
-         <h2><img src="images/BQ-32.png" class="paddingRight" />Welcome to Bible Quiz!</h2>
+         <h2><img src="images/BQ-32.png" class="paddingRight" alt="Bible Quiz logo" />Welcome to Bible Quiz!</h2>
 
          <p>
             Welcome to Bible Quiz, a fun way to grow in your knowledge of the

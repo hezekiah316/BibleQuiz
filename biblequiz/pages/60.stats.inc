@@ -19,7 +19,7 @@
                <tr><th>Section</th><th>Right / Wrong</th></tr>
             </thead>
             <tbody>
-               <tr><td>WHOLE BIBLE</td>                   <td id="BQ_Stats_Total_Bible  "    >0 / 0</td></tr>
+               <tr><td>WHOLE BIBLE</td>                   <td id="BQ_Stats_Total_Bible"      >0 / 0</td></tr>
                <tr><td></td><td></td></tr>
                <tr><td>OLD TESTAMENT</td>                 <td id="BQ_Stats_Total_OT"         >0 / 0</td></tr>
                <tr><td>Pentateuch</td>                    <td id="BQ_Stats_Total_Pentateuch" >0 / 0</td></tr>
